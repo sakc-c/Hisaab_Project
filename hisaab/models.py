@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 
-class User(AbstractUser):
+class User(AbstractUser): #AbstractUser for password hashing
     userID = models.IntegerField(unique=True)
     role = models.CharField(max_length=128)
     createdAt = models.DateTimeField(auto_now_add=True)
