@@ -1,0 +1,28 @@
+{% extends 'hisaab/base.html' %}
+{% block content %}
+<h2>Inventory</h2>
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Item Name</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Loop through inventory items from Django context -->
+        {% for item in inventory_items %}
+        <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ item.price }}</td>
+            <td>
+                <a href="{% url 'edit_inventory' item.id %}" class="btn btn-sm btn-warning">Edit</a>
+                <a href="{% url 'delete_inventory' item.id %}" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -55,7 +55,7 @@ ROOT_URLCONF = 'hisaab_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS':  [BASE_DIR / "hisaab/templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
