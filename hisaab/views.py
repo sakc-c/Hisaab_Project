@@ -1,9 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
-def index(request):
-    return HttpResponse("Testing!")
-
 
 def sign_in(request):
     return render(request, 'hisaab/sign_in.html')
@@ -17,5 +14,8 @@ def inventory(request):
 def bills(request):
     return render(request, 'hisaab/bills.html', {'bills': []})  # Pass bills data
 
-def admin_page(request):
-    return render(request, 'hisaab/admin_page.html')
+def reports(request):
+    return render(request, 'hisaab/reports.html', {'report': []})  # Pass reports data
+
+def user_management(request):
+    return render(request, 'hisaab/user_management.html')
