@@ -1,0 +1,63 @@
+{% extends 'hisaab/base.html' %}
+{% block content %}
+    <h2 class="mb-4">Inventory Categories</h2>
+
+    <button type="button" class="btn btn-success mb-4" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        Add Category
+    </button>
+
+    <div class="row">
+        {% for category in categories %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="{{ category.image_url }}" class="card-img-top" alt="{{ category.name }}" style="max-width: 100%; height: 200px; object-fit: cover;">
+
+                    <div class="card-body">
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text">{{ category.description }}</p>
+                        <a href="{% url 'category' category.id %}" class="btn btn-primary">View Category</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+        <!-- Modal for Adding Category -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- The Form for Adding a Category -->
+                    <form method="POST" action="{% url 'add_category' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Category Name -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Category Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+
+                        <!-- Category Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Category Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+
+                        <!-- Category Image URL (Optional) -->
+                        <div class="mb-3">
+                            <label for="image_url" class="form-label">Image URL (Optional)</label>
+                            <input type="text" class="form-control" id="image_url" name="image_url">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary">Add Category</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

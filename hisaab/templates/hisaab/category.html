@@ -1,0 +1,79 @@
+<!-- Category Detail Page (Product Table) -->
+{% extends 'hisaab/base.html' %}
+{% block content %}
+    <h2>Inventory - {{ category.name }}</h2>
+    <table class="table table-bordered table-hover">
+        <thead>
+        <tr>
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in inventory_items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.categoryID.name }}</td>
+                <td>{{ item.stockLevel }}</td>
+                <td>${{ item.unitPrice }}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                            data-bs-target="#editProductModal{{ item.productID }}">Edit
+                    </button>
+
+                    <a href="{% url 'delete_product' item.productID %}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5">No products found in this category.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Edit Product Modal -->
+    {% for item in inventory_items %}
+        <div class="modal fade" id="editProductModal{{ item.productID }}" tabindex="-1"
+             aria-labelledby="editProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Product - {{ item.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="POST" action="{% url 'edit_product' item.productID %}"
+                              enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <!-- Add categoryID as hidden field -->
+                            <input type="hidden" name="categoryID" value="{{ item.categoryID.id }}">
+
+                            <div class="mb-3">
+                                <label for="name{{ item.productID }}" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="name{{ item.productID }}" name="name"
+                                       value="{{ item.name }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="unitPrice{{ item.productID }}" class="form-label">Price</label>
+                                <input type="number" step="0.01" class="form-control" id="unitPrice{{ item.productID }}"
+                                       name="unitPrice" value="{{ item.unitPrice }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="stockLevel{{ item.productID }}" class="form-label">Stock Level</label>
+                                <input type="number" class="form-control" id="stockLevel{{ item.productID }}"
+                                       name="stockLevel"
+                                       value="{{ item.stockLevel }}">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
