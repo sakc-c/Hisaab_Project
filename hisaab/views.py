@@ -6,38 +6,25 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.shortcuts import redirect
 
-from django.contrib.auth import get_user_model
-User = get_user_model()
-
 from hisaab.forms import CategoryForm, ProductForm
 from hisaab.models import Category, Product
 
 
 def user_login(request):
     if request.method == 'POST':
-        users = User.objects.all()
-        for user in users:
-            print(user.username)
-            print(user.password)
-        # print("POST")
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(username=username, password=password)
 
         if user:
-            # print("User found")
             if user.is_active:
-                # print("User active")
                 login(request, user)
                 return redirect(reverse('dashboard'))
             else:
                 return HttpResponse("Your Rango account is disabled.")
         else:
-            # print("Wrong details")
-            # print(f"Invalid login details: {username}, {password}")
             return HttpResponse("Invalid login details supplied.")
     else:
-        # print("no POST")
         return render(request, 'hisaab/login.html')
 
 def user_logout(request):
