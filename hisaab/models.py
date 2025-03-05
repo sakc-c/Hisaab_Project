@@ -41,9 +41,16 @@ class Bill(models.Model):
 
 class Category(models.Model):
     NAME_MAX_LENGTH = 128
-    categoryID = models.IntegerField(unique=True)
+    categoryID = models.IntegerField(unique=True, editable=False)
     name = models.CharField(max_length=NAME_MAX_LENGTH)
     description = models.TextField()
+    image_url = models.URLField(max_length=255, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.categoryID:
+            last_category = Category.objects.all().last()
+            self.categoryID = last_category.categoryID + 1 if last_category else 1
+        super(Category, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "Categories"
