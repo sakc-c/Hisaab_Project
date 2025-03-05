@@ -14,12 +14,14 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                {% if user.is_authenticated %}
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="{% url 'inventory' %}">Inventory</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'bills' %}">Bills</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'reports' %}">Reports</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'user_management' %}">User Management</a></li>
-                    <li class="nav-item"><a class="nav-link text-danger" href="{% url 'sign_in' %}">Logout</a></li>
+                    <li class="nav-item"><a class="nav-link text-danger" href="{% url 'logout' %}">Logout</a></li>
+                {% endif %}
                     
                 </ul>
             </div>
