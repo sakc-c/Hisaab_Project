@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -76,14 +77,10 @@ WSGI_APPLICATION = 'hisaab_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hisaab',
-        'USER': 'postgres',
-        'PASSWORD': 'hisaab2025',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default='postgresql://postgres1:pihT9sviCNJEMP8QfdZPcnVOxDUG4LxK@dpg-cv4bnl2n91rc73dv6oog-a.oregon-postgres.render.com/hisaab_ninv',
+        conn_max_age=600
+    )
 }
 
 
