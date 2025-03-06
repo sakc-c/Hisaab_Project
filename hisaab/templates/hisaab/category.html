@@ -2,6 +2,10 @@
 {% extends 'hisaab/base.html' %}
 {% block content %}
     <h2>Inventory - {{ category.name }}</h2>
+    <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addProductModal"> Add
+        Product
+    </button>
+
     <table class="table table-bordered table-hover">
         <thead>
         <tr>
@@ -35,6 +39,41 @@
         {% endfor %}
         </tbody>
     </table>
+
+    <!-- Add Product Modal -->
+        <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% url 'add_product' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Add categoryID as hidden field -->
+                        <input type="hidden" name="categoryID" value="{{ category.id }}">
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="unitPrice" class="form-label">Price</label>
+                            <input type="number" step="0.01" class="form-control" id="unitPrice" name="unitPrice" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="stockLevel" class="form-label">Stock Level</label>
+                            <input type="number" class="form-control" id="stockLevel" name="stockLevel" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Add Product</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Edit Product Modal -->
     {% for item in inventory_items %}
