@@ -1,3 +1,5 @@
+{% load custom_filters %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,10 +18,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if user.is_authenticated %}
                 <ul class="navbar-nav ms-auto">
+                    {% if request.user|has_group:"inventory_manager" %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'inventory' %}">Inventory</a></li>
+                    {% elif request.user|has_group:"cashier" %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'bills' %}">Bills</a></li>
+                    {% else %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'inventory' %}">Inventory</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'bills' %}">Bills</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'reports' %}">Reports</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'create_user' %}">User Management</a></li>
+                    {% endif %}
                     <li class="nav-item"><a class="nav-link text-danger" href="{% url 'logout' %}">Logout</a></li>
                 {% endif %}
                     
