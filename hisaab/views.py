@@ -65,6 +65,8 @@ def create_user(request):
 
 def inventory(request):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
+            return render(request, 'hisaab/unauthorised.html')
         categories = Category.objects.all()
         return render(request, 'hisaab/inventoryMain.html', {'categories': categories})  # Pass inventory items
     else:
@@ -73,6 +75,8 @@ def inventory(request):
 
 def bills(request):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'cashier']).exists():
+            return render(request, 'hisaab/unauthorised.html')
         return render(request, 'hisaab/bills.html', {'bills': []})  # Pass bills data
     else:
        return render(request, 'hisaab/login.html') 
@@ -80,6 +84,8 @@ def bills(request):
 
 def reports(request):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name='h_admin').exists():
+            return render(request, 'hisaab/unauthorised.html')
         return render(request, 'hisaab/reports.html', {'report': []})  # Pass reports data
     else:
        return render(request, 'hisaab/login.html') 
@@ -87,6 +93,8 @@ def reports(request):
 
 def user_management(request):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name='h_admin').exists():
+            return render(request, 'hisaab/unauthorised.html')
         return render(request, 'hisaab/user_management.html')
     else:
        return render(request, 'hisaab/login.html') 
@@ -94,6 +102,8 @@ def user_management(request):
 
 def add_category(request):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name='h_admin').exists():
+            return render(request, 'hisaab/unauthorised.html')
         if request.method == 'POST':
             form = CategoryForm(request.POST, request.FILES)
             if form.is_valid():
@@ -111,6 +121,8 @@ def add_category(request):
 
 def category_detail(request, category_id):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
+            return render(request, 'hisaab/unauthorised.html')
         category = get_object_or_404(Category, id=category_id)
         inventory_items = Product.objects.filter(categoryID=category_id)  # Ensure filtering correctly
 
@@ -123,6 +135,8 @@ def category_detail(request, category_id):
 
 def edit_product(request, product_id):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
+            return render(request, 'hisaab/unauthorised.html')
         product = get_object_or_404(Product, id=product_id)
 
         if request.method == 'POST':
@@ -151,6 +165,8 @@ def edit_product(request, product_id):
 
 def delete_product(request, product_id):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
+            return render(request, 'hisaab/unauthorised.html')
         product = get_object_or_404(Product, id=product_id)
         category_id = product.categoryID.id
         product.delete()
