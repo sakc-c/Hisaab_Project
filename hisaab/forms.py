@@ -45,6 +45,42 @@ class CreateUserForm(forms.ModelForm):
         if not re.search(r'[@#$%^&+=!~*()_]', password):
             raise forms.ValidationError("Password must contain at least one special character.")
         return password
+    
+class CustomPasswordChangeForm(forms.Form):
+    new_password1 = forms.CharField(
+        label="New Password", 
+        widget=forms.PasswordInput, 
+        required=True
+    )
+    new_password2 = forms.CharField(
+        label="Confirm New Password", 
+        widget=forms.PasswordInput, 
+        required=True
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_new_password(self):
+        new_password1 = self.cleaned_data.get("new_password1")
+        new_password2 = self.cleaned_data.get("new_password2")
+        if new_password1 != new_password2:
+            raise forms.ValidationError("New passwords do not match")
+        if len(new_password1) < 8:
+            raise forms.ValidationError("Password must be at least 8 characters long.")
+        if not re.search(r'\d', new_password1):
+            raise forms.ValidationError("Password must contain at least one number.")
+        if not re.search(r'[a-zA-Z]', new_password1):
+            raise forms.ValidationError("Password must contain at least one letter.")
+        if not re.search(r'[@#$%^&+=!~*()_]', new_password1):
+            raise forms.ValidationError("Password must contain at least one special character.")
+        return new_password1
+
+    def save(self):
+        new_password = self.cleaned_data.get("new_password1")
+        self.user.set_password(new_password)
+        self.user.save()
 
 class CategoryForm(forms.ModelForm):
     class Meta:

@@ -1,0 +1,6 @@
+{% extends 'hisaab/base.html' %}
+{% block content %}
+<h2>Are you sure you want to delete the user - {{ user.username }}? This action is irreversible.</h2>
+<a href="{% url 'delete_user_action' user.id %}" class="btn btn-sm btn-danger">Yes</a>
+<a href="{% url 'user_management'%}" class="btn btn-sm btn-warning">No</a>
+{% endblock %}

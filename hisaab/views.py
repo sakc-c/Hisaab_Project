@@ -6,12 +6,11 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.shortcuts import redirect
 from django.contrib.auth import get_user_model
+User = get_user_model()
 
-from hisaab.forms import CategoryForm, ProductForm
+from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswordChangeForm
 from hisaab.models import Category, Product
 from django.contrib.auth.models import Group
-
-from hisaab.forms import CreateUserForm
 
 
 def user_login(request):
@@ -61,7 +60,35 @@ def create_user(request):
         else:
             errors = user_form.errors
             # print(errors)
-    return render(request, 'hisaab/user_management.html', context={'user_form': user_form, 'registered': registered, 'groups': groups, 'errors': errors})
+    return render(request, 'hisaab/create_user.html', context={'user_form': user_form, 'registered': registered, 'groups': groups, 'errors': errors})
+
+# TODO - not working properly (updated admin pass, logged out), add if same as old password
+def change_password(request, user_id):
+    print("in change password")
+    user = get_object_or_404(User, pk=user_id)
+    username = user.get_username()
+    form = CustomPasswordChangeForm(user=user)
+    errors = ""
+    if request.method == 'POST':
+        form = CustomPasswordChangeForm(user=user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('user_management')
+        else:
+            errors = form.errors
+    return render(request, 'hisaab/change_password.html', context={'username': username, 'form': form, 'errors': errors})
+
+#  TODO - fix URL
+def delete_user_page(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    return render(request, 'hisaab/delete_user.html', context={'user': user})
+
+def delete_user(request, user_id):
+    # print("deleting account...")
+    user = get_object_or_404(User, pk=user_id)
+    user.delete()
+    users = User.objects.exclude(groups__name='h_admin')
+    return render(request, 'hisaab/user_management.html', context = {'users': users})
 
 def inventory(request):
     if request.user.is_authenticated:
@@ -95,7 +122,8 @@ def user_management(request):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name='h_admin').exists():
             return render(request, 'hisaab/unauthorised.html')
-        return render(request, 'hisaab/user_management.html')
+        users = User.objects.exclude(groups__name='h_admin')
+        return render(request, 'hisaab/user_management.html', context = {'users': users})
     else:
        return render(request, 'hisaab/login.html') 
 
