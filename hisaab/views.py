@@ -5,9 +5,13 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse
 from django.urls import reverse
 from django.shortcuts import redirect
+from django.contrib.auth import get_user_model
 
 from hisaab.forms import CategoryForm, ProductForm
 from hisaab.models import Category, Product
+from django.contrib.auth.models import Group
+
+from hisaab.forms import CreateUserForm
 
 
 def user_login(request):
@@ -38,6 +42,26 @@ def dashboard(request):
     else:
        return render(request, 'hisaab/login.html') 
 
+def create_user(request):
+    registered = False
+    errors = ""
+    user_form = CreateUserForm()
+    # print("Entered user creation")
+    groups = Group.objects.all()
+    if request.method == 'POST':
+        # print("POST")
+        user_form = CreateUserForm(request.POST)
+        if user_form.is_valid():
+            # print("form valid")
+            user = user_form.save(commit=False)
+            user.set_password(user.password)
+            user.save()
+            user.groups.set(user_form.cleaned_data['groups']) # workaround this?
+            registered = True
+        else:
+            errors = user_form.errors
+            # print(errors)
+    return render(request, 'hisaab/user_management.html', context={'user_form': user_form, 'registered': registered, 'groups': groups, 'errors': errors})
 
 def inventory(request):
     if request.user.is_authenticated:

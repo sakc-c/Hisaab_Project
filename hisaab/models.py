@@ -1,14 +1,20 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
+from django.db.models import Max
 
 # Create your models here.
 
 class User(AbstractUser): #AbstractUser for password hashing
-    userID = models.IntegerField(unique=True)
-    role = models.CharField(max_length=128)
+    userID = models.IntegerField(unique=True, blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)
 
-    REQUIRED_FIELDS = ['userID', 'role']
+    REQUIRED_FIELDS = ['userID']
+
+    def save(self, *args, **kwargs):
+        if self.userID is None:
+            max_user_id = User.objects.aggregate(Max('userID'))['userID__max']
+            self.userID = (max_user_id or 0) + 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
