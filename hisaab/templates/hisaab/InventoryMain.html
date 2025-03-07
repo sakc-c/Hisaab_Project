@@ -1,29 +1,34 @@
 {% extends 'hisaab/base.html' %}
 {% block content %}
-    <h2 class="mb-4">Inventory Categories</h2>
 
-    <button type="button" class="btn btn-success mb-4" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-        Add Category
-    </button>
-
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-2">Inventory Categories</h2>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            Add Category
+        </button>
+    </div>
     <div class="row">
         {% for category in categories %}
             <div class="col-md-4 mb-4">
                 <div class="card">
-                    <img src="{{ category.image_url }}" class="card-img-top" alt="{{ category.name }}" style="max-width: 100%; height: 200px; object-fit: cover;">
+                    <img src="{{ category.image_url|default:'default_image_url_here' }}" class="card-img-top"
+                         alt="{{ category.name }}" style="max-width: 100%; height: 200px; object-fit: cover;">
 
                     <div class="card-body">
                         <h5 class="card-title">{{ category.name }}</h5>
                         <p class="card-text">{{ category.description }}</p>
-                        <a href="{% url 'category' category.id %}" class="btn btn-primary">View Category</a>
+                        {% if category.categoryID %}
+                            <a href="{% url 'category' category.categoryID %}" class="btn btn-primary">View Category</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         {% endfor %}
     </div>
 
-        <!-- Modal for Adding Category -->
-    <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <!-- Modal for Adding Category -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel"
+         aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">

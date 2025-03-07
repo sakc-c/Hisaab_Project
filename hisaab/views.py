@@ -151,7 +151,7 @@ def category_detail(request, category_id):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
-        category = get_object_or_404(Category, id=category_id)
+        category = get_object_or_404(Category, categoryID=category_id)
         inventory_items = Product.objects.filter(categoryID=category_id)  # Ensure filtering correctly
 
         return render(request, 'hisaab/category.html', {
@@ -161,34 +161,39 @@ def category_detail(request, category_id):
     else:
        return render(request, 'hisaab/login.html')
 
+
 def edit_product(request, product_id):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
-        product = get_object_or_404(Product, id=product_id)
+
+        product = get_object_or_404(Product, productID=product_id)
 
         if request.method == 'POST':
-            # Bind the form with the POST data and the current product instance
             form = ProductForm(request.POST, instance=product)
+            category_id = request.POST.get('categoryID')
+            if category_id:
+                try:
+                    form.instance.categoryID = Category.objects.get(categoryID=category_id)
+                except (ValueError, Category.DoesNotExist) as e:
+                    return redirect('category', category_id=product.categoryID.categoryID)
 
             if form.is_valid():
-                form.save()
-                return redirect('category',
-                                category_id=product.categoryID.id)  # Redirect back to the category page after saving
+                form.save()  # Save the form with updated product and category
+                return redirect('category', category_id=product.categoryID.categoryID)  # Redirect to category page
             else:
                 print(form.errors)
-                return redirect('category',
-                                category_id=product.categoryID.id)
+                return redirect('category', category_id=product.categoryID.categoryID)
 
         else:
-            # If GET request, initialize the form with the current product's data
             form = ProductForm(instance=product)
 
         category = product.categoryID
         inventory_items = Product.objects.filter(categoryID=category)
-        return render(request, 'hisaab/category.html', {'category': category,'inventory_items': inventory_items, })
+        return render(request, 'hisaab/category.html', {'category': category, 'inventory_items': inventory_items})
+
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
 
 
 def delete_product(request, product_id):
@@ -196,7 +201,7 @@ def delete_product(request, product_id):
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
         product = get_object_or_404(Product, id=product_id)
-        category_id = product.categoryID.id
+        category_id = product.categoryID.categoryID
         product.delete()
         return redirect('category', category_id=category_id)  # Redirect after deleting
     else:
@@ -211,13 +216,14 @@ def add_product(request):
         if request.method == 'POST':
             form = ProductForm(request.POST)
             if form.is_valid():
-                form.save()
+                product = form.save(commit=False)
+                product.createdBy = request.user  # Automatically set createdBy to the current user
+                product.save()
                 return redirect('category', category_id=request.POST.get('categoryID'))
             else:
-                # Pass the form with errors back to the template
                 return render(request, 'hisaab/InventoryMain.html', {'form': form, 'errors': form.errors})
         else:
-            form = ProductForm()  # Create an empty form if it's a GET request
+            form = ProductForm()
         return render(request, 'hisaab/InventoryMain.html', {'form': form})
     else:
         return render(request, 'hisaab/login.html')
