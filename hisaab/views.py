@@ -146,6 +146,39 @@ def add_category(request):
     else:
        return render(request, 'hisaab/login.html')
 
+def edit_category(request, category_id):
+    if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
+            return render(request, 'hisaab/unauthorised.html')
+
+        category = get_object_or_404(Category, categoryID=category_id)
+
+        if request.method == 'POST':
+            form = CategoryForm(request.POST, instance=category)
+            if form.is_valid():
+                form.save()
+                return redirect('inventory')  # Redirect to the inventory page after saving
+            else:
+                print(form.errors)
+                return render(request, 'hisaab/InventoryMain.html', {'form': form, 'errors': form.errors})
+        else:
+            form = CategoryForm(instance=category)
+
+        return render(request, 'hisaab/InventoryMain.html', {'form': form})
+    else:
+        return render(request, 'hisaab/login.html')
+
+def delete_category(request, category_id):
+    if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
+            return render(request, 'hisaab/unauthorised.html')
+
+        category = get_object_or_404(Category, categoryID=category_id)
+        category.delete()
+        return redirect('inventory')  # Redirect to the inventory page after deletion
+    else:
+        return render(request, 'hisaab/login.html')
+
 
 def category_detail(request, category_id):
     if request.user.is_authenticated:
@@ -200,12 +233,14 @@ def delete_product(request, product_id):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
-        product = get_object_or_404(Product, id=product_id)
-        category_id = product.categoryID.categoryID
+
+        # Use productID instead of id
+        product = get_object_or_404(Product, productID=product_id)
+        category_id = product.categoryID.categoryID  # Get the category ID before deleting the product
         product.delete()
-        return redirect('category', category_id=category_id)  # Redirect after deleting
+        return redirect('category', category_id=category_id)
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
 
 
 def add_product(request):
