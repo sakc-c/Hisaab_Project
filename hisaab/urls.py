@@ -14,6 +14,7 @@ urlpatterns = [
     path('delete-user/<int:user_id>/', views.delete_user_page, name='delete_user_page'),
     path('delete-user-action/<int:user_id>/', views.delete_user, name='delete_user_action'),
     path('delete-user/<int:user_id>/', views.delete_user, name='delete_user'),
+    path('add_category/', views.add_category, name='add_category'),
     path('category/<int:category_id>/', views.category_detail, name='category'),
     path('add_category/', views.add_category, name='add_category'),
     path('edit_category/<int:category_id>/', views.edit_category, name='edit_category'),

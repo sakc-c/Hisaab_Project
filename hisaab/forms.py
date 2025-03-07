@@ -62,9 +62,10 @@ class CustomPasswordChangeForm(forms.Form):
         self.user = user
         super().__init__(*args, **kwargs)
 
-    def clean_new_password(self):
-        new_password1 = self.cleaned_data.get("new_password1")
-        new_password2 = self.cleaned_data.get("new_password2")
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password1 = cleaned_data.get("new_password1")
+        new_password2 = cleaned_data.get("new_password2")
         if new_password1 != new_password2:
             raise forms.ValidationError("New passwords do not match")
         if len(new_password1) < 8:
@@ -75,12 +76,7 @@ class CustomPasswordChangeForm(forms.Form):
             raise forms.ValidationError("Password must contain at least one letter.")
         if not re.search(r'[@#$%^&+=!~*()_]', new_password1):
             raise forms.ValidationError("Password must contain at least one special character.")
-        return new_password1
-
-    def save(self):
-        new_password = self.cleaned_data.get("new_password1")
-        self.user.set_password(new_password)
-        self.user.save()
+        return cleaned_data
 
 class CategoryForm(forms.ModelForm):
     class Meta:
