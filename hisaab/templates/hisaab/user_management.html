@@ -23,10 +23,10 @@
                 {% endif %}
               </td>              
             <td>
-                <a href="{% url 'change_password' user.id %}" class="btn btn-sm btn-warning">Change password</a>
+                <a href="{% url 'change_password' user.pk %}" class="btn btn-sm btn-warning">Change password</a>
             </td>
             <td>
-                <a href="{% url 'delete_user_page' user.id %}" class="btn btn-sm btn-danger">Delete</a>
+                <a href="{% url 'delete_user_page' user.pk %}" class="btn btn-sm btn-danger">Delete</a>
             </td>
         </tr>
         {% endfor %}

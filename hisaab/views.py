@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse
 from django.urls import reverse
 from django.shortcuts import redirect
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -45,13 +46,10 @@ def create_user(request):
     registered = False
     errors = ""
     user_form = CreateUserForm()
-    # print("Entered user creation")
     groups = Group.objects.all()
     if request.method == 'POST':
-        # print("POST")
         user_form = CreateUserForm(request.POST)
         if user_form.is_valid():
-            # print("form valid")
             user = user_form.save(commit=False)
             user.set_password(user.password)
             user.save()
@@ -59,26 +57,26 @@ def create_user(request):
             registered = True
         else:
             errors = user_form.errors
-            # print(errors)
     return render(request, 'hisaab/create_user.html', context={'user_form': user_form, 'registered': registered, 'groups': groups, 'errors': errors})
 
-# TODO - not working properly (updated admin pass, logged out), add if same as old password
 def change_password(request, user_id):
-    print("in change password")
     user = get_object_or_404(User, pk=user_id)
-    username = user.get_username()
     form = CustomPasswordChangeForm(user=user)
-    errors = ""
+    errors = {}
     if request.method == 'POST':
         form = CustomPasswordChangeForm(user=user, data=request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('user_management')
+            new_password = form.cleaned_data.get('new_password1')
+            if check_password(new_password, user.password):
+                errors['new_password1'] = ["New password cannot be the same as the current password."]
+            else:
+                user.set_password(new_password)
+                user.save()
+                return redirect('user_management')
         else:
             errors = form.errors
-    return render(request, 'hisaab/change_password.html', context={'username': username, 'form': form, 'errors': errors})
+    return render(request, 'hisaab/change_password.html', context={'username': user.get_username(), 'form': form, 'user_id': user.pk, 'errors': errors})
 
-#  TODO - fix URL
 def delete_user_page(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     return render(request, 'hisaab/delete_user.html', context={'user': user})
