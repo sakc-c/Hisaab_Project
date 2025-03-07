@@ -1,5 +1,38 @@
 {% extends 'hisaab/base.html' %}
 {% block content %}
 <h2>User Management</h2>
-<p>Manage users</p>
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Change password</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Loop through inventory items from Django context -->
+        {% for user in users %}
+        <tr>
+            <td>{{ user.username }}</td>
+            <td>
+                {% if user.groups.all %}
+                  {{ user.groups.all|join:", " }}
+                {% else %}
+                  No Groups
+                {% endif %}
+              </td>              
+            <td>
+                <a href="{% url 'change_password' user.id %}" class="btn btn-sm btn-warning">Change password</a>
+            </td>
+            <td>
+                <a href="{% url 'delete_user_page' user.id %}" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<hr>
+<h5>Just onboarded a new employee? Great! </h5>
+<a href="{% url 'create_user'%}" class="btn btn-sm btn-warning">Create new user</a>
 {% endblock %}

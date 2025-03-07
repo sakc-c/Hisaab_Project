@@ -1,27 +1,31 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
-
-# Create your models here.
+from django.contrib.auth.models import AbstractUser, Group
+from django.db.models import Max
 
 class User(AbstractUser): #AbstractUser for password hashing
-    userID = models.IntegerField(unique=True)
-    role = models.CharField(max_length=128)
+    userID = models.IntegerField(unique=True, blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)
 
-    REQUIRED_FIELDS = ['userID', 'role']
+    REQUIRED_FIELDS = ['userID']
+
+    def save(self, *args, **kwargs):
+        if self.userID is None:
+            max_user_id = User.objects.aggregate(Max('userID'))['userID__max']
+            self.userID = (max_user_id or 0) + 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
 
 
 class Report(models.Model):
-    reportID = models.IntegerField(unique=True)
+    reportID = models.AutoField(primary_key=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     userID = models.ForeignKey(User, on_delete=models.CASCADE)
     reportType = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.reportID
+        return str(self.reportID)
 
 class Bill(models.Model):
     DISCOUNT_CHOICES = [
@@ -29,7 +33,7 @@ class Bill(models.Model):
         (10, "10%"),
         (15, "15%"),
     ]
-    billID = models.IntegerField(unique=True)
+    billID = models.AutoField(primary_key=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     userID = models.ForeignKey(User, on_delete=models.CASCADE)
     totalAmount = models.DecimalField(decimal_places=2, max_digits=20)
@@ -41,16 +45,10 @@ class Bill(models.Model):
 
 class Category(models.Model):
     NAME_MAX_LENGTH = 128
-    categoryID = models.IntegerField(unique=True, editable=False)
+    categoryID = models.AutoField(primary_key=True)
     name = models.CharField(max_length=NAME_MAX_LENGTH)
     description = models.TextField()
     image_url = models.URLField(max_length=255, null=True)
-
-    def save(self, *args, **kwargs):
-        if not self.categoryID:
-            last_category = Category.objects.all().last()
-            self.categoryID = last_category.categoryID + 1 if last_category else 1
-        super(Category, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "Categories"
@@ -60,7 +58,7 @@ class Category(models.Model):
 
 class Product(models.Model):
     NAME_MAX_LENGTH = 128
-    productID = models.IntegerField(unique=True)
+    productID = models.AutoField(primary_key=True)
     name = models.CharField(max_length=NAME_MAX_LENGTH)
     categoryID = models.ForeignKey(Category, on_delete=models.CASCADE)
     unitPrice = models.DecimalField(decimal_places=2, max_digits=20)

@@ -1,6 +1,86 @@
 from django import forms
 from hisaab.models import Category, Product
+from django.contrib.auth.models import Group
+from .models import User
+from django.contrib.auth import get_user_model
+import re
 
+class UserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput())
+    class Meta:
+        model = User
+        fields = ('username', 'password')
+
+class CreateUserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput(), required=True)
+
+    class Meta:
+        model = get_user_model()
+        fields = ('username', 'password', 'groups')
+
+    groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.all(),
+        widget=forms.SelectMultiple,
+        required=True
+    )
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Username already exists. Please choose a different username.")
+        if not username[0].isalpha():
+            raise forms.ValidationError("Username must begin with a letter. Please choose a different username.")
+        if len(username) < 7:
+            raise forms.ValidationError("Username too short. Please choose a different username.")
+        return username
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if len(password) < 8:
+            raise forms.ValidationError("Password must be at least 8 characters long.")
+        if not re.search(r'\d', password):
+            raise forms.ValidationError("Password must contain at least one number.")
+        if not re.search(r'[a-zA-Z]', password):
+            raise forms.ValidationError("Password must contain at least one letter.")
+        if not re.search(r'[@#$%^&+=!~*()_]', password):
+            raise forms.ValidationError("Password must contain at least one special character.")
+        return password
+    
+class CustomPasswordChangeForm(forms.Form):
+    new_password1 = forms.CharField(
+        label="New Password", 
+        widget=forms.PasswordInput, 
+        required=True
+    )
+    new_password2 = forms.CharField(
+        label="Confirm New Password", 
+        widget=forms.PasswordInput, 
+        required=True
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_new_password(self):
+        new_password1 = self.cleaned_data.get("new_password1")
+        new_password2 = self.cleaned_data.get("new_password2")
+        if new_password1 != new_password2:
+            raise forms.ValidationError("New passwords do not match")
+        if len(new_password1) < 8:
+            raise forms.ValidationError("Password must be at least 8 characters long.")
+        if not re.search(r'\d', new_password1):
+            raise forms.ValidationError("Password must contain at least one number.")
+        if not re.search(r'[a-zA-Z]', new_password1):
+            raise forms.ValidationError("Password must contain at least one letter.")
+        if not re.search(r'[@#$%^&+=!~*()_]', new_password1):
+            raise forms.ValidationError("Password must contain at least one special character.")
+        return new_password1
+
+    def save(self):
+        new_password = self.cleaned_data.get("new_password1")
+        self.user.set_password(new_password)
+        self.user.save()
 
 class CategoryForm(forms.ModelForm):
     class Meta:
