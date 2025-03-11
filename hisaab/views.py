@@ -6,11 +6,12 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.shortcuts import redirect
 from django.contrib.auth.hashers import check_password
+from django.db.models import Count, Sum
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
 from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswordChangeForm
-from hisaab.models import Category, Product
+from hisaab.models import Category, Product, BillDetails
 from django.contrib.auth.models import Group
 
 
@@ -38,7 +39,31 @@ def user_logout(request):
 
 def dashboard(request):
     if request.user.is_authenticated:
-        return render(request, 'hisaab/dashboard.html')
+        top_three_products_sold = (
+            BillDetails.objects.values('productID', 'productID__name')
+            .annotate(count=Count('productID'))
+            .order_by('-count')[:3]
+        )
+        top_three_revenue_generating_products = (
+           BillDetails.objects.values('productID', 'productID__name')
+           .annotate(total_revenue=Sum('amount'))
+           .order_by('-total_revenue')[:3]
+        )
+        sold_labels = [item['productID__name'] for item in top_three_products_sold]
+        sold_data = [item['count'] for item in top_three_products_sold]
+        revenue_labels = [item['productID__name'] for item in top_three_revenue_generating_products]
+        revenue_data = [item['total_revenue'] for item in top_three_revenue_generating_products]
+
+        low_stock_products = Product.objects.filter(stockLevel__lte=5)
+
+        context = {
+            'sold_labels': sold_labels,
+            'sold_data': sold_data,
+            'revenue_labels': revenue_labels,
+            'revenue_data': revenue_data,
+            'low_stock_products': low_stock_products
+        }
+        return render(request, 'hisaab/dashboard.html', context=context)
     else:
        return render(request, 'hisaab/login.html') 
 
