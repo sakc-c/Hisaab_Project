@@ -1,8 +1,13 @@
 
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
+from django.urls import path, reverse_lazy
+from django.contrib.auth import views as auth_views
 from django.conf.urls.static import static
+from django.urls import path
+
 from hisaab_project import settings
+
 from . import views
 
 urlpatterns = [
