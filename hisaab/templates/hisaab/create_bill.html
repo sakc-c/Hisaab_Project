@@ -9,6 +9,10 @@
         }
     </style>
 
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-10">

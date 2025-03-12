@@ -313,6 +313,11 @@ def create_bill(request):
                             product = form.cleaned_data[product_field]
                             quantity = form.cleaned_data[quantity_field]
                             if product and quantity:
+                                if product.stockLevel < quantity:
+                                    form.add_error(None,
+                                                   f'Insufficient stock for {product.name}. Available: {product.stockLevel}, Requested: {quantity}')
+                                    raise ValueError(
+                                        f'Insufficient stock for {product.name}. Available: {product.stockLevel}, Requested: {quantity}')
                                 # Calculate the total amount for this product
                                 amount = product.unitPrice * quantity
                                 total += amount
@@ -383,12 +388,10 @@ def delete_bill(request, bill_id):
 
         # Restore stock for all products in the bill
         bill_details = BillDetails.objects.filter(billID=bill)
-
-        # Loop through the BillDetails and restore the stock
         for detail in bill_details:
             product = detail.productID
-            product.stockLevel += detail.quantity  # Restore the stock
-            product.save()  # Save the updated stock level
+            product.stockLevel += detail.quantity
+            product.save()
 
         bill_details.delete()  # Delete BillDetails
         bill.delete()  # Delete the Bill
