@@ -1,5 +1,86 @@
 {% extends 'hisaab/base.html' %}
 {% block content %}
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 <h2>Dashboard</h2>
-<p>Welcome to Hisaab! Manage inventory, track bills, and view reports.</p>
+<h5>Welcome to Hisaab! Manage inventory, track bills, and view reports.</h5>
+<br><br>
+
+{{ sold_labels|json_script:"sold_labels" }}
+{{ sold_data|json_script:"sold_data" }}
+{{ revenue_labels|json_script:"revenue_labels" }}
+{{ revenue_data|json_script:"revenue_data" }}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="chart-container">
+            <canvas id="soldBarChart" height="400" width="650"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="chart-container">
+            <canvas id="revenueBarChart"height="400" width="650"></canvas>
+        </div>
+    </div>
+</div>
+<br>
+<hr>
+<br>
+
+<center><h6>Products with low stock</h6></center>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Product ID</th>
+            <th>Category</th>
+            <th>Stock Level</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in low_stock_products %}
+        <tr>
+            <td>{{ product.name }}</td>
+            <td>{{ product.productID }}</td>
+            <td>{{ product.categoryID.name }}</td>
+            <td>{{ product.stockLevel }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    // Sold Products Chart
+    var ctx1 = document.getElementById("soldBarChart").getContext("2d");
+    var soldLabels = JSON.parse(document.getElementById('sold_labels').textContent);
+    var soldData = JSON.parse(document.getElementById('sold_data').textContent);
+    new Chart(ctx1, {
+        type: "bar",
+        data: {
+            labels: soldLabels,
+            datasets: [{
+                label: "Top Sold Products",
+                data: soldData,
+                backgroundColor: "#AB7324"
+            }]
+        }
+    });
+
+    // Revenue Generating Products Chart
+    var ctx2 = document.getElementById("revenueBarChart").getContext("2d");
+    var revenueLabels = JSON.parse(document.getElementById('revenue_labels').textContent);
+    var revenueData = JSON.parse(document.getElementById('revenue_data').textContent);
+    new Chart(ctx2, {
+        type: "bar",
+        data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: "Top Revenue Generating Products",
+                data: revenueData,
+                backgroundColor: "#36A2BB"
+            }]
+        }
+    });
+</script>
 {% endblock %}
