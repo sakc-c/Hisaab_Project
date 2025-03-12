@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, JsonResponse
+from django.contrib import messages
 
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse
@@ -27,15 +27,11 @@ def user_login(request):
         user = authenticate(username=username, password=password)
 
         if user:
-            if user.is_active:
-                login(request, user)
-                return redirect(reverse('dashboard'))
-            else:
-                return HttpResponse("Your Rango account is disabled.")
+            login(request, user)
+            return redirect(reverse('dashboard'))
         else:
-            return HttpResponse("Invalid login details supplied.")
-    else:
-        return render(request, 'hisaab/login.html')
+            messages.error(request, "Invalid username or password.")
+    return render(request, 'hisaab/login.html')
 
 
 def user_logout(request):

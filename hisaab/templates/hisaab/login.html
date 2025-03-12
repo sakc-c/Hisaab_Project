@@ -15,6 +15,13 @@
             </div>
             <button type="submit" class="btn btn-primary w-100" value="submit">Login</button>
         </form>
+        {% if messages %}
+            <div class="alert alert-danger">
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
