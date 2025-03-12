@@ -1,14 +1,27 @@
-<!-- Category Detail Page (Product Table) -->
 {% extends 'hisaab/base.html' %}
+
 {% block content %}
-    <h2>Inventory - {{ category.name }}</h2>
-    <table class="table table-bordered table-hover">
+    <!-- Header and Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Inventory - {{ category.name }}</h2>
+        <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            Add Product
+        </button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="d-flex mb-3">
+        <input type="text" id="searchInput" class="form-control w-50 me-2" placeholder="Search products..."
+               style="max-width: 300px; border-radius: 20px; padding: 8px;">
+    </div>
+
+    <!-- Product Table -->
+    <table class="table table-bordered table-hover" id="productTable">
         <thead>
         <tr>
-            <th>Item Name</th>
-            <th>Category</th>
-            <th>Quantity</th>
-            <th>Price</th>
+            <th class="sortable" data-column="0">Item Name <span class="sort-icon">&#9650;&#9660;</span></th>
+            <th class="sortable" data-column="1">Quantity <span class="sort-icon">&#9650;&#9660;</span></th>
+            <th class="sortable" data-column="2">Price <span class="sort-icon">&#9650;&#9660;</span></th>
             <th>Actions</th>
         </tr>
         </thead>
@@ -16,27 +29,60 @@
         {% for item in inventory_items %}
             <tr>
                 <td>{{ item.name }}</td>
-                <td>{{ item.categoryID.name }}</td>
                 <td>{{ item.stockLevel }}</td>
                 <td>${{ item.unitPrice }}</td>
                 <td>
                     <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
-                            data-bs-target="#editProductModal{{ item.productID }}">Edit
+                            data-bs-target="#editProductModal{{ item.productID }}">
+                        <i class="bi bi-pencil"></i>
                     </button>
-
                     <a href="{% url 'delete_product' item.productID %}" class="btn btn-sm btn-danger"
-                       onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
+                       onclick="return confirm('Are you sure you want to delete this product?');"><i
+                            class="bi bi-trash"></i> </a>
                 </td>
             </tr>
         {% empty %}
             <tr>
-                <td colspan="5">No products found in this category.</td>
+                <td colspan="4">No products found in this category.</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 
-    <!-- Edit Product Modal -->
+    <!-- Add Product Modal -->
+    <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% url 'add_product' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="categoryID" value="{{ category.categoryID }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="unitPrice" class="form-label">Price</label>
+                            <input type="number" step="0.01" class="form-control" id="unitPrice" name="unitPrice"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="stockLevel" class="form-label">Stock Level</label>
+                            <input type="number" class="form-control" id="stockLevel" name="stockLevel" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Product</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modals -->
     {% for item in inventory_items %}
         <div class="modal fade" id="editProductModal{{ item.productID }}" tabindex="-1"
              aria-labelledby="editProductModalLabel" aria-hidden="true">
@@ -50,9 +96,7 @@
                         <form method="POST" action="{% url 'edit_product' item.productID %}"
                               enctype="multipart/form-data">
                             {% csrf_token %}
-                            <!-- Add categoryID as hidden field -->
-                            <input type="hidden" name="categoryID" value="{{ item.categoryID.id }}">
-
+                            <input type="hidden" name="categoryID" value="{{ item.categoryID.categoryID }}">
                             <div class="mb-3">
                                 <label for="name{{ item.productID }}" class="form-label">Product Name</label>
                                 <input type="text" class="form-control" id="name{{ item.productID }}" name="name"
@@ -66,8 +110,7 @@
                             <div class="mb-3">
                                 <label for="stockLevel{{ item.productID }}" class="form-label">Stock Level</label>
                                 <input type="number" class="form-control" id="stockLevel{{ item.productID }}"
-                                       name="stockLevel"
-                                       value="{{ item.stockLevel }}">
+                                       name="stockLevel" value="{{ item.stockLevel }}">
                             </div>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
                         </form>
@@ -76,4 +119,50 @@
             </div>
         </div>
     {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+    <!-- jQuery and Page-Specific Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Search functionality (for product name)
+            $('#searchInput').on('keyup', function () {
+                let searchTerm = $(this).val().toLowerCase();
+                $('#productTable tbody tr').each(function () {
+                    let productName = $(this).find('td:first').text().toLowerCase();
+                    $(this).toggle(productName.includes(searchTerm)); // Show/hide rows based on the search term
+                });
+            });
+
+            // Sorting functionality
+            $('.sortable').on('click', function () {
+                let column = $(this).data('column');
+                let ascending = $(this).hasClass('asc'); //if already sorted
+                let table = $('#productTable tbody');
+                let rows = table.find('tr').toArray();
+
+                // Sort rows based on the column's content
+                rows.sort(function (a, b) {
+                    let valA = $(a).find('td').eq(column).text().trim();
+                    let valB = $(b).find('td').eq(column).text().trim();
+
+                    // Check if the column is numeric (Quantity or Price)
+                    if (column === 1 || column === 2) {
+                        valA = parseFloat(valA.replace('$', ''));
+                        valB = parseFloat(valB.replace('$', ''));
+                        return ascending ? valA - valB : valB - valA; // Numeric sort
+                    } else {
+                        return ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                    }
+                });
+
+                // Rebuild the table with sorted rows
+                table.append(rows);
+
+                // Toggle the sorting order
+                $(this).toggleClass('asc desc');
+            });
+        });
+    </script>
 {% endblock %}

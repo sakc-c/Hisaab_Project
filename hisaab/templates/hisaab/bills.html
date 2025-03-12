@@ -1,24 +1,71 @@
 {% extends 'hisaab/base.html' %}
+{% load custom_filters %}
+
 {% block content %}
-<h2>Bills</h2>
-<table class="table table-bordered">
-    <thead>
+    <!-- Header and Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Billing</h2>
+        <a href="{% url 'create_bill' %}" class="btn btn-success mb-3">
+            + New Bill
+        </a>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="d-flex mb-3">
+        <input type="text" id="searchInput" class="form-control w-50 me-2" placeholder="Search bill numbers..."
+               style="max-width: 300px; border-radius: 20px; padding: 8px;">
+    </div>
+
+    <!-- Bill Table -->
+    <table class="table table-bordered table-hover" id="billTable">
+        <thead>
         <tr>
             <th>Bill ID</th>
             <th>Customer Name</th>
-            <th>Total Amount</th>
-            <th>Date</th>
+            <th>Amount</th>
+            <th>Date Created</th>
+            <th>Actions</th>
         </tr>
-    </thead>
-    <tbody>
+        </thead>
+        <tbody>
         {% for bill in bills %}
-        <tr>
-            <td>{{ bill.id }}</td>
-            <td>{{ bill.customer_name }}</td>
-            <td>${{ bill.total_amount }}</td>
-            <td>{{ bill.date }}</td>
-        </tr>
+            <tr>
+                <td>{{ bill.billID }}</td>
+                <td>{{ bill.customerName }}</td>
+                <td>${{ bill.totalAmount }}</td>
+                <td>{{ bill.createdAt }}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                            data-bs-target="#editBillModal{{ bill.billID }}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    {% if request.user|has_group:"h_admin" %}
+                        <a href="{% url 'delete_bill' bill.billID %}" class="btn btn-sm btn-danger"
+                           onclick="return confirm('Are you sure you want to delete this bill?');">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5">No bills found.</td>
+            </tr>
         {% endfor %}
-    </tbody>
-</table>
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function () {
+            $('#searchInput').on('keyup', function () {
+                let searchTerm = $(this).val().toLowerCase(); // Get the search input
+                $('#billTable tbody tr').each(function () {
+                    let billID = $(this).find('td:first').text().toLowerCase(); // Get the Bill ID in each row
+                    $(this).toggle(billID.includes(searchTerm)); // Show/hide rows based on the search term
+                });
+            });
+        });
+    </script>
 {% endblock %}
