@@ -376,10 +376,23 @@ def create_bill(request):
     })
 
 
+
 def delete_bill(request, bill_id):
     if request.user.is_authenticated:
         bill = get_object_or_404(Bill, pk=bill_id)
-        bill.delete()
-        return redirect('bills')
+
+        # Restore stock for all products in the bill
+        bill_details = BillDetails.objects.filter(billID=bill)
+
+        # Loop through the BillDetails and restore the stock
+        for detail in bill_details:
+            product = detail.productID
+            product.stockLevel += detail.quantity  # Restore the stock
+            product.save()  # Save the updated stock level
+
+        bill_details.delete()  # Delete BillDetails
+        bill.delete()  # Delete the Bill
+
+        return redirect('bills')  # Redirect to the bills list page
     else:
         return render(request, 'hisaab/login.html')
