@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 
@@ -292,50 +293,71 @@ def create_bill(request):
     if request.method == "POST":
         form = BillForm(request.POST)
         if form.is_valid():
-            # Get cleaned data from the form
-            customer_name = form.cleaned_data['customer_name']
-            discount = form.cleaned_data['discount']
-            total = 0.0
+            try:
+                with transaction.atomic():
+                    # Get cleaned data from the form
+                    customer_name = form.cleaned_data['customer_name']
+                    discount = int(form.cleaned_data['discount'])
 
-            # Create the bill entry
-            bill = Bill.objects.create(
-                userID=request.user,
-                customerName=customer_name,
-                discount=discount,
-                totalAmount=total
-            )
+                    # Calculate the total
+                    total = 0
+                    for i in range(1, 21):  # Loop through up to 20 products
+                        product_field = f'product_{i}'
+                        quantity_field = f'quantity_{i}'
 
-            # Loop through the products and quantities
-            for i in range(1, 20):  # Support up to 20 products
-                product_field = f'product_{i}'
-                quantity_field = f'quantity_{i}'
+                        if product_field in form.cleaned_data and quantity_field in form.cleaned_data:
+                            product = form.cleaned_data[product_field]
+                            quantity = form.cleaned_data[quantity_field]
+                            if product and quantity:
+                                total += product.unitPrice * quantity
 
-                if product_field in request.POST and quantity_field in request.POST:
-                    product_id = request.POST[product_field]
-                    quantity = int(request.POST[quantity_field])
+                    # Apply discount
+                    total = total * (1 - discount / 100)
 
-                    try:
-                        product = Product.objects.get(id=product_id)
-                        total += product.unitPrice * quantity
+                    # Create the bill entry
+                    bill = Bill.objects.create(
+                        userID=request.user,
+                        customerName=customer_name,
+                        discount=discount,
+                        totalAmount=total
+                    )
 
-                        # Add product and quantity to the bill (using many-to-many relationship)
-                        bill.products.add(product, through_defaults={'quantity': quantity})
+                    # Loop through the products and quantities
+                    for i in range(1, 21):
+                        product_field = f'product_{i}'
+                        quantity_field = f'quantity_{i}'
 
-                    except Product.DoesNotExist:
-                        continue  # If product doesn't exist, skip to the next
+                        if product_field in form.cleaned_data and quantity_field in form.cleaned_data:
+                            product = form.cleaned_data[product_field]
+                            quantity = form.cleaned_data[quantity_field]
 
-            # Apply discount to total
-            total = total - (total * (discount / 100))
+                            if product and quantity:
+                                # Check stock level
+                                if product.stockLevel < quantity:
+                                    raise ValueError(f'Insufficient stock for {product.name}')
 
-            # Update bill with the calculated total
-            bill.totalAmount = total
-            bill.save()
 
-            return redirect('bills')  # Redirect to the bills page
+                                bill.products.add(product, through_defaults={'quantity': quantity})
+
+                                # Update stock level
+                                product.stockLevel -= quantity
+                                product.save()
+
+                                # Generate PDF for the bill
+
+                    return redirect('bills')
+
+            except ValueError as e:
+                # Handle insufficient stock error
+                return render(request, 'hisaab/create_bill.html', {
+                    'form': form,
+                    'products': Product.objects.all(),
+                    'error': str(e)
+                })
+
     else:
         form = BillForm()
 
-    # Pass all products to the template
     products = Product.objects.all()
 
     return render(request, 'hisaab/create_bill.html', {

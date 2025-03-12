@@ -36,6 +36,7 @@ class Bill(models.Model):
     billID = models.AutoField(primary_key=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     userID = models.ForeignKey(User, on_delete=models.CASCADE)
+    customerName = models.CharField(max_length=255, blank=True, null=True)
     totalAmount = models.DecimalField(decimal_places=2, max_digits=20)
     discount = models.IntegerField(choices=DISCOUNT_CHOICES, default=5)
 

@@ -100,7 +100,7 @@ class ProductForm(forms.ModelForm):
 
 class BillForm(forms.Form):
     customer_name = forms.CharField(max_length=255, required=True, label='Customer Name')
-    discount = forms.ChoiceField(choices=Bill.DISCOUNT_CHOICES, required=True, label='Discount')
+    discount = forms.ChoiceField(choices=Bill.DISCOUNT_CHOICES, required=False, label='Discount')
 
     # Dynamic fields for up to 20 products
     for i in range(1, 21):
