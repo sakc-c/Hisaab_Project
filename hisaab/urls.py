@@ -24,5 +24,5 @@ urlpatterns = [
     path('delete/<int:product_id>/', views.delete_product, name='delete_product'),
     path('bills/', views.bills, name='bills'),
     path('bills/delete/<int:bill_id>/', views.delete_bill, name='delete_bill'),
-    path('create_bill/', views.create_bill, name='create_bill'),
+    path('bills/create_bill/', views.create_bill, name='create_bill'),
 ]

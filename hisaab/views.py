@@ -313,6 +313,11 @@ def create_bill(request):
                             product = form.cleaned_data[product_field]
                             quantity = form.cleaned_data[quantity_field]
                             if product and quantity:
+                                if product.stockLevel < quantity:
+                                    form.add_error(None,
+                                                   f'Insufficient stock for {product.name}. Available: {product.stockLevel}, Requested: {quantity}')
+                                    raise ValueError(
+                                        f'Insufficient stock for {product.name}. Available: {product.stockLevel}, Requested: {quantity}')
                                 # Calculate the total amount for this product
                                 amount = product.unitPrice * quantity
                                 total += amount
@@ -376,10 +381,21 @@ def create_bill(request):
     })
 
 
+
 def delete_bill(request, bill_id):
     if request.user.is_authenticated:
         bill = get_object_or_404(Bill, pk=bill_id)
-        bill.delete()
-        return redirect('bills')
+
+        # Restore stock for all products in the bill
+        bill_details = BillDetails.objects.filter(billID=bill)
+        for detail in bill_details:
+            product = detail.productID
+            product.stockLevel += detail.quantity
+            product.save()
+
+        bill_details.delete()  # Delete BillDetails
+        bill.delete()  # Delete the Bill
+
+        return redirect('bills')  # Redirect to the bills list page
     else:
         return render(request, 'hisaab/login.html')
