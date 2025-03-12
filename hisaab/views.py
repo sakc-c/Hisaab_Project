@@ -88,6 +88,7 @@ def create_user(request):
             user.save()
             user.groups.set(user_form.cleaned_data['groups'])  # workaround this?
             registered = True
+            return redirect('user_management')
         else:
             errors = user_form.errors
     return render(request, 'hisaab/create_user.html',
