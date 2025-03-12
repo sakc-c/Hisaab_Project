@@ -1,4 +1,5 @@
 {% extends 'hisaab/base.html' %}
+{% load custom_filters %}
 
 {% block content %}
     <!-- Header and Buttons -->
@@ -38,7 +39,7 @@
                             data-bs-target="#editBillModal{{ bill.billID }}">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    {% if 'h_admin' in user_groups or 'inventory_manager' in user_groups %}
+                    {% if request.user|has_group:"h_admin" %}
                         <a href="{% url 'delete_bill' bill.billID %}" class="btn btn-sm btn-danger"
                            onclick="return confirm('Are you sure you want to delete this bill?');">
                             <i class="bi bi-trash"></i>
