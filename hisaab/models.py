@@ -29,6 +29,7 @@ class Report(models.Model):
 
 class Bill(models.Model):
     DISCOUNT_CHOICES = [
+        (0, "No Discount"),
         (5, "5%"),
         (10, "10%"),
         (15, "15%"),

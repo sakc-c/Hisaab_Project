@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
@@ -12,7 +14,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswordChangeForm, BillForm
-from hisaab.models import Category, Product, Bill
+from hisaab.models import Category, Product, Bill, BillDetails
 from django.contrib.auth.models import Group
 
 
@@ -297,10 +299,12 @@ def create_bill(request):
                 with transaction.atomic():
                     # Get cleaned data from the form
                     customer_name = form.cleaned_data['customer_name']
-                    discount = int(form.cleaned_data['discount'])
+                    discount = form.cleaned_data.get('discount', 0)
 
-                    # Calculate the total
-                    total = 0
+                    # Calculate the total dynamically from products and quantities
+                    total = Decimal(0)
+                    products_data = []
+
                     for i in range(1, 21):  # Loop through up to 20 products
                         product_field = f'product_{i}'
                         quantity_field = f'quantity_{i}'
@@ -309,12 +313,20 @@ def create_bill(request):
                             product = form.cleaned_data[product_field]
                             quantity = form.cleaned_data[quantity_field]
                             if product and quantity:
-                                total += product.unitPrice * quantity
+                                # Calculate the total amount for this product
+                                amount = product.unitPrice * quantity
+                                total += amount
+                                products_data.append({
+                                    'product': product,
+                                    'quantity': quantity,
+                                    'unit_price': product.unitPrice,
+                                    'amount': amount
+                                })
 
-                    # Apply discount
-                    total = total * (1 - discount / 100)
+                    # Apply discount, ensuring both values are Decimal
+                    total = total * (1 - Decimal(discount) / Decimal(100))
 
-                    # Create the bill entry
+                    # Create the bill entry in the database
                     bill = Bill.objects.create(
                         userID=request.user,
                         customerName=customer_name,
@@ -322,30 +334,27 @@ def create_bill(request):
                         totalAmount=total
                     )
 
-                    # Loop through the products and quantities
-                    for i in range(1, 21):
-                        product_field = f'product_{i}'
-                        quantity_field = f'quantity_{i}'
+                    # Loop through the products and quantities to create BillDetails entries
+                    for product_data in products_data:
+                        product = product_data['product']
+                        quantity = product_data['quantity']
+                        unit_price = product_data['unit_price']
+                        amount = product_data['amount']
 
-                        if product_field in form.cleaned_data and quantity_field in form.cleaned_data:
-                            product = form.cleaned_data[product_field]
-                            quantity = form.cleaned_data[quantity_field]
+                        # Create a BillDetails entry for each product
+                        BillDetails.objects.create(
+                            billID=bill,
+                            productID=product,
+                            quantity=quantity,
+                            unitPrice=unit_price,
+                            amount=amount
+                        )
 
-                            if product and quantity:
-                                # Check stock level
-                                if product.stockLevel < quantity:
-                                    raise ValueError(f'Insufficient stock for {product.name}')
+                        # Update stock level of the product
+                        product.stockLevel -= quantity
+                        product.save()
 
-
-                                bill.products.add(product, through_defaults={'quantity': quantity})
-
-                                # Update stock level
-                                product.stockLevel -= quantity
-                                product.save()
-
-                                # Generate PDF for the bill
-
-                    return redirect('bills')
+                    return redirect('bills')  # Redirect to the bills page
 
             except ValueError as e:
                 # Handle insufficient stock error
@@ -358,6 +367,7 @@ def create_bill(request):
     else:
         form = BillForm()
 
+    # Pass all products to the template
     products = Product.objects.all()
 
     return render(request, 'hisaab/create_bill.html', {
