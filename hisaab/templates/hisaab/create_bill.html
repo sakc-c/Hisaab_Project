@@ -1,0 +1,168 @@
+{% extends 'hisaab/base.html' %}
+
+{% block content %}
+    {#    default padding seemed a bit extra - any other way? #}
+    <style>
+        .custom-form .row {
+            margin-left: -5px;
+            margin-right: -5px;
+        }
+    </style>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <h2 class="mb-5">Create Bill</h2>
+
+                <form method="post" id="createBillForm" class="custom-form">
+                    {% csrf_token %}
+
+                    <!-- Customer Name -->
+                    <div class="mb-4 row">
+                        <div class="col-3">
+                            <label for="customer_name" class="form-label">Customer Name:</label>
+                        </div>
+                        <div class="col-7">
+                            <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                        </div>
+                    </div>
+
+                    <!-- Product, Quantity, Price, and + button -->
+                    <div id="productFields">    <!-- using #productFields and classes add-product, product-row in JS -->
+                        <div class="row mb-4 product-row">
+                            <div class="col-4">
+                                <label for="product_1" class="form-label">Product:</label>
+                                <select class="form-select" name="product_1" required>
+                                    {% for product in products %}
+                                        <option value="{{ product.productID }}"
+                                                data-price="{{ product.unitPrice }}">{{ product.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-3">
+                                <label for="quantity_1" class="form-label">Quantity:</label>
+                                <input type="number" class="form-control" name="quantity_1" min="1" value="1" required>
+                            </div>
+                            <div class="col-3">
+                                <label for="price_1" class="form-label">Unit Price:</label>
+                                <input type="text" class="form-control" name="price_1" id="price_1" readonly>
+                            </div>
+                            <div class="col-1 d-flex align-items-center justify-content-center">
+                                <button type="button" class="btn btn-sm btn-success add-product">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discount -->
+                    <div class="row mb-4">
+                        <div class="col-3">
+                            <label for="discount" class="form-label">Discount:</label>
+                        </div>
+                        <div class="col-7">
+                            <select class="form-select" name="discount" id="discount" required>
+                                <option value="0"></option>
+                                <option value="5">5%</option>
+                                <option value="10">10%</option>
+                                <option value="15">15%</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="row mb-4">
+                        <div class="col-3">
+                            <label for="total" class="form-label">Total:</label>
+                        </div>
+                        <div class="col-7">
+                            <input type="text" class="form-control" id="total" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="d-flex justify-content-end pe-5 gap-3">
+                        <button type="button" class="btn btn-success" id="generateTotal">Generate Total</button>
+                        <button type="submit" class="btn btn-primary" id="createBillBtn">Create Bill</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function () {
+            function setPrice(row) {
+                const selectedOption = row.find('select option:selected');
+                const priceField = row.find('input[name^="price_"]');
+                priceField.val(selectedOption.data('price'));
+            }
+
+            // Show prices for selected products
+            $('select[name^="product_"]').each(function () {
+                setPrice($(this).closest('.product-row'));
+            });
+
+            // Function to add a new product row
+            $('#productFields').on('click', '.add-product', function () {
+                const productRow = $('.product-row').first().clone(); // Clone the first product row
+                const productCount = $('.product-row').length + 1; // Calculate the next product row number
+
+                // Update the name attributes of the new row to match the form fields
+                productRow.find('select').attr('name', `product_${productCount}`);
+                productRow.find('input[type="number"]').attr('name', `quantity_${productCount}`);
+                productRow.find('input[readonly]').attr({
+                    name: `price_${productCount}`,
+                    id: `price_${productCount}`
+                });
+
+                // Clear the quantity and price fields in the new row
+                productRow.find('input[type="number"]').val(1);
+                productRow.find('input[readonly]').val('');
+
+                // Change the button to remove the row (and add a minus sign)
+                const button = productRow.find('button');
+                button.text('-')
+                    .removeClass('add-product btn-success')
+                    .addClass('btn-danger remove-product');
+
+                // Append the new row to the productFields div
+                $('#productFields').append(productRow);
+
+                // Set the initial price for the new product row
+                setPrice(productRow);
+            });
+
+            // Function to remove a product row
+            $('#productFields').on('click', '.remove-product', function () {
+                $(this).closest('.product-row').remove();
+            });
+
+            // Update the price field when a product is selected
+            $('#productFields').on('change', 'select', function () {
+                setPrice($(this).closest('.product-row'));
+            });
+
+            // Generate Total button handler
+            $('#generateTotal').on('click', function () {
+                let total = 0;
+
+                // Loop through all product rows
+                $('.product-row').each(function () {
+                    const quantity = parseInt($(this).find('input[type="number"]').val()) || 0;
+                    const price = parseFloat($(this).find('input[readonly]').val()) || 0;
+                    total += quantity * price;
+                });
+
+                // Apply discount
+                const discount = parseInt($('#discount').val()) || 0;
+                total = total * (1 - discount / 100);
+
+                // Update total field
+                $('#total').val(total.toFixed(2));
+
+                return true;
+            });
+        });
+    </script>
+{% endblock %}

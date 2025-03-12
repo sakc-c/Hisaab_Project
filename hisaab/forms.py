@@ -1,15 +1,18 @@
 from django import forms
-from hisaab.models import Category, Product
+from hisaab.models import Category, Product, Bill
 from django.contrib.auth.models import Group
 from .models import User
 from django.contrib.auth import get_user_model
 import re
 
+
 class UserForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput())
+
     class Meta:
         model = User
         fields = ('username', 'password')
+
 
 class CreateUserForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(), required=True)
@@ -45,16 +48,17 @@ class CreateUserForm(forms.ModelForm):
         if not re.search(r'[@#$%^&+=!~*()_]', password):
             raise forms.ValidationError("Password must contain at least one special character.")
         return password
-    
+
+
 class CustomPasswordChangeForm(forms.Form):
     new_password1 = forms.CharField(
-        label="New Password", 
-        widget=forms.PasswordInput, 
+        label="New Password",
+        widget=forms.PasswordInput,
         required=True
     )
     new_password2 = forms.CharField(
-        label="Confirm New Password", 
-        widget=forms.PasswordInput, 
+        label="Confirm New Password",
+        widget=forms.PasswordInput,
         required=True
     )
 
@@ -78,6 +82,7 @@ class CustomPasswordChangeForm(forms.Form):
             raise forms.ValidationError("Password must contain at least one special character.")
         return cleaned_data
 
+
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
@@ -86,8 +91,30 @@ class CategoryForm(forms.ModelForm):
     description = forms.CharField(widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Category description'}))
     image_url = forms.URLField(widget=forms.URLInput(attrs={'placeholder': 'Image URL (optional)'}), required=False)
 
+
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = ['name', 'unitPrice', 'stockLevel', 'categoryID']  # Include all fields you want to be editable
 
+
+class BillForm(forms.Form):
+    customer_name = forms.CharField(max_length=255, required=True, label='Customer Name')
+    discount = forms.ChoiceField(choices=Bill.DISCOUNT_CHOICES, required=False, label='Discount')
+
+    # Dynamic fields for up to 20 products
+    for i in range(1, 21):
+        locals()[f'product_{i}'] = forms.ModelChoiceField(queryset=Product.objects.all(), required=False, label=f'Product {i}')
+        locals()[f'quantity_{i}'] = forms.IntegerField(min_value=1, required=False, label=f'Quantity {i}')
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Ensure at least one product and quantity is selected
+        products = [cleaned_data.get(f'product_{i}') for i in range(1, 21)]
+        quantities = [cleaned_data.get(f'quantity_{i}') for i in range(1, 21)]
+
+        if not any(products) or not any(quantities):
+            raise forms.ValidationError("Please add at least one product with quantity.")
+
+        return cleaned_data
