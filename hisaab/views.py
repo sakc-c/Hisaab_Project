@@ -7,10 +7,11 @@ from django.urls import reverse
 from django.shortcuts import redirect
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth import get_user_model
+
 User = get_user_model()
 
-from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswordChangeForm
-from hisaab.models import Category, Product
+from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswordChangeForm, BillForm
+from hisaab.models import Category, Product, Bill
 from django.contrib.auth.models import Group
 
 
@@ -31,16 +32,19 @@ def user_login(request):
     else:
         return render(request, 'hisaab/login.html')
 
+
 def user_logout(request):
     if request.user.is_authenticated:
         logout(request)
     return render(request, 'hisaab/login.html')
 
+
 def dashboard(request):
     if request.user.is_authenticated:
         return render(request, 'hisaab/dashboard.html')
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
+
 
 def create_user(request):
     registered = False
@@ -53,11 +57,13 @@ def create_user(request):
             user = user_form.save(commit=False)
             user.set_password(user.password)
             user.save()
-            user.groups.set(user_form.cleaned_data['groups']) # workaround this?
+            user.groups.set(user_form.cleaned_data['groups'])  # workaround this?
             registered = True
         else:
             errors = user_form.errors
-    return render(request, 'hisaab/create_user.html', context={'user_form': user_form, 'registered': registered, 'groups': groups, 'errors': errors})
+    return render(request, 'hisaab/create_user.html',
+                  context={'user_form': user_form, 'registered': registered, 'groups': groups, 'errors': errors})
+
 
 def change_password(request, user_id):
     user = get_object_or_404(User, pk=user_id)
@@ -75,18 +81,22 @@ def change_password(request, user_id):
                 return redirect('user_management')
         else:
             errors = form.errors
-    return render(request, 'hisaab/change_password.html', context={'username': user.get_username(), 'form': form, 'user_id': user.pk, 'errors': errors})
+    return render(request, 'hisaab/change_password.html',
+                  context={'username': user.get_username(), 'form': form, 'user_id': user.pk, 'errors': errors})
+
 
 def delete_user_page(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     return render(request, 'hisaab/delete_user.html', context={'user': user})
+
 
 def delete_user(request, user_id):
     # print("deleting account...")
     user = get_object_or_404(User, pk=user_id)
     user.delete()
     users = User.objects.exclude(groups__name='h_admin')
-    return render(request, 'hisaab/user_management.html', context = {'users': users})
+    return render(request, 'hisaab/user_management.html', context={'users': users})
+
 
 def inventory(request):
     if request.user.is_authenticated:
@@ -95,7 +105,7 @@ def inventory(request):
         categories = Category.objects.all()
         return render(request, 'hisaab/inventoryMain.html', {'categories': categories})  # Pass inventory items
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
 
 
 def bills(request):
@@ -104,7 +114,7 @@ def bills(request):
             return render(request, 'hisaab/unauthorised.html')
         return render(request, 'hisaab/bills.html', {'bills': []})  # Pass bills data
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
 
 
 def reports(request):
@@ -113,7 +123,7 @@ def reports(request):
             return render(request, 'hisaab/unauthorised.html')
         return render(request, 'hisaab/reports.html', {'report': []})  # Pass reports data
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
 
 
 def user_management(request):
@@ -121,9 +131,9 @@ def user_management(request):
         if not request.user.groups.filter(name='h_admin').exists():
             return render(request, 'hisaab/unauthorised.html')
         users = User.objects.exclude(groups__name='h_admin')
-        return render(request, 'hisaab/user_management.html', context = {'users': users})
+        return render(request, 'hisaab/user_management.html', context={'users': users})
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
 
 
 def add_category(request):
@@ -136,13 +146,15 @@ def add_category(request):
                 form.save()  # Saves the category
                 return redirect('inventory')  # Redirect back to the inventory page after adding a category
             else:
-                return render(request, 'hisaab/InventoryMain.html', {'form': form, 'errors': form.errors}) #display the errors later
+                return render(request, 'hisaab/InventoryMain.html',
+                              {'form': form, 'errors': form.errors})  # display the errors later
         else:
             form = CategoryForm()
 
         return render(request, 'hisaab/InventoryMain.html', {'form': form})
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
+
 
 def edit_category(request, category_id):
     if request.user.is_authenticated:
@@ -165,6 +177,7 @@ def edit_category(request, category_id):
         return render(request, 'hisaab/InventoryMain.html', {'form': form})
     else:
         return render(request, 'hisaab/login.html')
+
 
 def delete_category(request, category_id):
     if request.user.is_authenticated:
@@ -190,7 +203,7 @@ def category_detail(request, category_id):
             'inventory_items': inventory_items  # Pass products properly
         })
     else:
-       return render(request, 'hisaab/login.html')
+        return render(request, 'hisaab/login.html')
 
 
 def edit_product(request, product_id):
@@ -258,5 +271,83 @@ def add_product(request):
         else:
             form = ProductForm()
         return render(request, 'hisaab/InventoryMain.html', {'form': form})
+    else:
+        return render(request, 'hisaab/login.html')
+
+
+def bills(request):
+    if request.user.is_authenticated:
+        user_groups = list(request.user.groups.values_list('name', flat=True))
+        bills = Bill.objects.all()
+        products = Product.objects.all()
+        return render(request, 'hisaab/bills.html', {'bills': bills, 'products': products, 'user_groups': user_groups})
+    else:
+        return render(request, 'hisaab/login.html')
+
+
+def create_bill(request):
+    if not request.user.is_authenticated:
+        return render(request, 'hisaab/login.html')
+
+    if request.method == "POST":
+        form = BillForm(request.POST)
+        if form.is_valid():
+            # Get cleaned data from the form
+            customer_name = form.cleaned_data['customer_name']
+            discount = form.cleaned_data['discount']
+            total = 0.0
+
+            # Create the bill entry
+            bill = Bill.objects.create(
+                userID=request.user,
+                customerName=customer_name,
+                discount=discount,
+                totalAmount=total
+            )
+
+            # Loop through the products and quantities
+            for i in range(1, 20):  # Support up to 20 products
+                product_field = f'product_{i}'
+                quantity_field = f'quantity_{i}'
+
+                if product_field in request.POST and quantity_field in request.POST:
+                    product_id = request.POST[product_field]
+                    quantity = int(request.POST[quantity_field])
+
+                    try:
+                        product = Product.objects.get(id=product_id)
+                        total += product.unitPrice * quantity
+
+                        # Add product and quantity to the bill (using many-to-many relationship)
+                        bill.products.add(product, through_defaults={'quantity': quantity})
+
+                    except Product.DoesNotExist:
+                        continue  # If product doesn't exist, skip to the next
+
+            # Apply discount to total
+            total = total - (total * (discount / 100))
+
+            # Update bill with the calculated total
+            bill.totalAmount = total
+            bill.save()
+
+            return redirect('bills')  # Redirect to the bills page
+    else:
+        form = BillForm()
+
+    # Pass all products to the template
+    products = Product.objects.all()
+
+    return render(request, 'hisaab/create_bill.html', {
+        'form': form,
+        'products': products
+    })
+
+
+def delete_bill(request, bill_id):
+    if request.user.is_authenticated:
+        bill = get_object_or_404(Bill, pk=bill_id)
+        bill.delete()
+        return redirect('bills')
     else:
         return render(request, 'hisaab/login.html')
