@@ -73,14 +73,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'hisaab_project.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+# Amazon RDS Postgres Database
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgresql://postgres1:pihT9sviCNJEMP8QfdZPcnVOxDUG4LxK@dpg-cv4bnl2n91rc73dv6oog-a.oregon-postgres.render.com/hisaab_ninv',
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'hisaab_db',
+        'USER': 'hisaab_admin',
+        'PASSWORD': 'v-e6LNVBcsM',
+        'HOST': 'database-1.cpmyaeygcdeh.eu-west-2.rds.amazonaws.com',
+        'PORT': '5432',
+    }
 }
 
 
