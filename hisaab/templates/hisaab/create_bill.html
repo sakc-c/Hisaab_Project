@@ -38,7 +38,7 @@
                                 <label for="product_1" class="form-label">Product:</label>
                                 <select class="form-select" name="product_1" required>
                                     {% for product in products %}
-                                        <option value="{{ product.productID }}"
+                                        <option value="{{ product.id }}"
                                                 data-price="{{ product.unitPrice }}">{{ product.name }}</option>
                                     {% endfor %}
                                 </select>

@@ -33,10 +33,10 @@
                 <td>${{ item.unitPrice }}</td>
                 <td>
                     <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
-                            data-bs-target="#editProductModal{{ item.productID }}">
+                            data-bs-target="#editProductModal{{ item.id }}">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <a href="{% url 'delete_product' item.productID %}" class="btn btn-sm btn-danger"
+                    <a href="{% url 'delete_product' item.id %}" class="btn btn-sm btn-danger"
                        onclick="return confirm('Are you sure you want to delete this product?');"><i
                             class="bi bi-trash"></i> </a>
                 </td>
@@ -61,7 +61,7 @@
                 <div class="modal-body">
                     <form method="POST" action="{% url 'add_product' %}" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <input type="hidden" name="categoryID" value="{{ category.categoryID }}">
+                        <input type="hidden" name="categoryID" value="{{ category.id }}">
                         <div class="mb-3">
                             <label for="name" class="form-label">Product Name</label>
                             <input type="text" class="form-control" id="name" name="name" required>
@@ -84,7 +84,7 @@
 
     <!-- Edit Product Modals -->
     {% for item in inventory_items %}
-        <div class="modal fade" id="editProductModal{{ item.productID }}" tabindex="-1"
+        <div class="modal fade" id="editProductModal{{ item.id }}" tabindex="-1"
              aria-labelledby="editProductModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -93,23 +93,23 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form method="POST" action="{% url 'edit_product' item.productID %}"
+                        <form method="POST" action="{% url 'edit_product' item.id %}"
                               enctype="multipart/form-data">
                             {% csrf_token %}
-                            <input type="hidden" name="categoryID" value="{{ item.categoryID.categoryID }}">
+                            <input type="hidden" name="categoryID" value="{{ item.categoryID.id }}">
                             <div class="mb-3">
-                                <label for="name{{ item.productID }}" class="form-label">Product Name</label>
-                                <input type="text" class="form-control" id="name{{ item.productID }}" name="name"
+                                <label for="name{{ item.id }}" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="name{{ item.id }}" name="name"
                                        value="{{ item.name }}">
                             </div>
                             <div class="mb-3">
-                                <label for="unitPrice{{ item.productID }}" class="form-label">Price</label>
-                                <input type="number" step="0.01" class="form-control" id="unitPrice{{ item.productID }}"
+                                <label for="unitPrice{{ item.id }}" class="form-label">Price</label>
+                                <input type="number" step="0.01" class="form-control" id="unitPrice{{ item.id }}"
                                        name="unitPrice" value="{{ item.unitPrice }}">
                             </div>
                             <div class="mb-3">
-                                <label for="stockLevel{{ item.productID }}" class="form-label">Stock Level</label>
-                                <input type="number" class="form-control" id="stockLevel{{ item.productID }}"
+                                <label for="stockLevel{{ item.id }}" class="form-label">Stock Level</label>
+                                <input type="number" class="form-control" id="stockLevel{{ item.id }}"
                                        name="stockLevel" value="{{ item.stockLevel }}">
                             </div>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
