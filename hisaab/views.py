@@ -187,7 +187,7 @@ def edit_category(request, category_id):
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
 
-        category = get_object_or_404(Category, categoryID=category_id)
+        category = get_object_or_404(Category, id=category_id)
 
         if request.method == 'POST':
             form = CategoryForm(request.POST, instance=category)
@@ -210,7 +210,7 @@ def delete_category(request, category_id):
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
 
-        category = get_object_or_404(Category, categoryID=category_id)
+        category = get_object_or_404(Category, id=category_id)
         category.delete()
         return redirect('inventory')  # Redirect to the inventory page after deletion
     else:
@@ -221,8 +221,8 @@ def category_detail(request, category_id):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
-        category = get_object_or_404(Category, categoryID=category_id)
-        inventory_items = Product.objects.filter(categoryID=category_id)  # Ensure filtering correctly
+        category = get_object_or_404(Category, id=category_id)
+        inventory_items = Product.objects.filter(categoryID=category)  # Ensure filtering correctly
 
         return render(request, 'hisaab/category.html', {
             'category': category,
@@ -237,23 +237,23 @@ def edit_product(request, product_id):
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
 
-        product = get_object_or_404(Product, productID=product_id)
+        product = get_object_or_404(Product, id=product_id)
 
         if request.method == 'POST':
             form = ProductForm(request.POST, instance=product)
             category_id = request.POST.get('categoryID')
             if category_id:
                 try:
-                    form.instance.categoryID = Category.objects.get(categoryID=category_id)
+                    form.instance.categoryID = Category.objects.get(id=category_id)
                 except (ValueError, Category.DoesNotExist) as e:
-                    return redirect('category', category_id=product.categoryID.categoryID)
+                    return redirect('category', category_id=product.categoryID.id)
 
             if form.is_valid():
                 form.save()  # Save the form with updated product and category
-                return redirect('category', category_id=product.categoryID.categoryID)  # Redirect to category page
+                return redirect('category', category_id=product.categoryID.id)  # Redirect to category page
             else:
                 print(form.errors)
-                return redirect('category', category_id=product.categoryID.categoryID)
+                return redirect('category', category_id=product.categoryID.id)
 
         else:
             form = ProductForm(instance=product)
@@ -272,8 +272,8 @@ def delete_product(request, product_id):
             return render(request, 'hisaab/unauthorised.html')
 
         # Use productID instead of id
-        product = get_object_or_404(Product, productID=product_id)
-        category_id = product.categoryID.categoryID  # Get the category ID before deleting the product
+        product = get_object_or_404(Product, id=product_id)
+        category_id = product.categoryID.id  # Get the category ID before deleting the product
         product.delete()
         return redirect('category', category_id=category_id)
     else:
@@ -289,7 +289,7 @@ def add_product(request):
             form = ProductForm(request.POST)
             if form.is_valid():
                 product = form.save(commit=False)
-                product.createdBy = request.user  # Automatically set createdBy to the current user
+                product.user = request.user  # Automatically set createdBy to the current user
                 product.save()
                 return redirect('category', category_id=request.POST.get('categoryID'))
             else:
@@ -356,7 +356,7 @@ def create_bill(request):
 
                     # Create the bill entry in the database
                     bill = Bill.objects.create(
-                        userID=request.user,
+                        user=request.user,
                         customerName=customer_name,
                         discount=discount,
                         totalAmount=total
