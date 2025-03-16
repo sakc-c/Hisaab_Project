@@ -12,6 +12,8 @@ from django.contrib.auth.hashers import check_password
 from django.db.models import Count, Sum
 from django.contrib.auth import get_user_model
 
+from hisaab_project import settings
+
 User = get_user_model()
 
 from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswordChangeForm, BillForm
@@ -48,9 +50,9 @@ def dashboard(request):
             .order_by('-count')[:3]
         )
         top_three_revenue_generating_products = (
-           BillDetails.objects.values('productID', 'productID__name')
-           .annotate(total_revenue=Sum('amount'))
-           .order_by('-total_revenue')[:3]
+            BillDetails.objects.values('productID', 'productID__name')
+            .annotate(total_revenue=Sum('amount'))
+            .order_by('-total_revenue')[:3]
         )
         sold_labels = [item['productID__name'] for item in top_three_products_sold]
         sold_data = [item['count'] for item in top_three_products_sold]
@@ -138,7 +140,16 @@ def bills(request):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name__in=['h_admin', 'cashier']).exists():
             return render(request, 'hisaab/unauthorised.html')
-        return render(request, 'hisaab/bills.html', {'bills': []})  # Pass bills data
+
+        # Get all bills for display
+        bills = Bill.objects.all().order_by('-createdAt')  # Most recent bills first
+
+        context = {
+            'bills': bills,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        return render(request, 'hisaab/bills.html', context)
     else:
         return render(request, 'hisaab/login.html')
 
@@ -306,7 +317,13 @@ def bills(request):
         user_groups = list(request.user.groups.values_list('name', flat=True))
         bills = Bill.objects.all()
         products = Product.objects.all()
-        return render(request, 'hisaab/bills.html', {'bills': bills, 'products': products, 'user_groups': user_groups})
+        context = {
+            'bills': bills,
+            'products': products,
+            'user_groups': user_groups,
+            'MEDIA_URL': settings.MEDIA_URL,  # Pass MEDIA_URL to the template
+        }
+        return render(request, 'hisaab/bills.html', context)
     else:
         return render(request, 'hisaab/login.html')
 
@@ -382,7 +399,40 @@ def create_bill(request):
                         product.stockLevel -= quantity
                         product.save()
 
-                    return redirect('bills')  # Redirect to the bills page
+                        # Generate PDF for the bill
+                        bill_details = BillDetails.objects.filter(billID=bill)
+                        subtotal = sum(detail.amount for detail in bill_details)
+                        discount_amount = subtotal * (Decimal(discount) / Decimal(100))
+
+                        context = {
+                            'bill': bill,
+                            'bill_details': bill_details,
+                            'subtotal': subtotal,
+                            'discount_amount': discount_amount,
+                        }
+
+                        # Generate PDF and store it
+                        pdf_path = bill.generate_pdf(context, "hisaab/bill_pdf.html")
+
+                        # Save the PDF path to the bill
+                        if pdf_path:
+                            bill.pdf_path = pdf_path
+                            bill.save()
+
+                            # Construct the full PDF URL for download
+                            pdf_url = request.build_absolute_uri(settings.MEDIA_URL + pdf_path)
+                        else:
+                            pdf_url = None
+
+                        # Use reverse to get the correct bills URL
+                        from django.urls import reverse
+                        bills_url = reverse('bills')
+
+                        # Redirect with PDF URL if available
+                        if pdf_url:
+                            return redirect(f"{bills_url}?pdf_url={pdf_url}")
+                        else:
+                            return redirect('bills')
 
             except ValueError as e:
                 # Handle insufficient stock error
@@ -402,7 +452,6 @@ def create_bill(request):
         'form': form,
         'products': products
     })
-
 
 
 def delete_bill(request, bill_id):
