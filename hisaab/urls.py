@@ -1,4 +1,8 @@
+from django.conf.urls.static import static
 from django.urls import path
+
+from hisaab_project import settings
+
 from . import views
 
 urlpatterns = [
@@ -26,3 +30,6 @@ urlpatterns = [
     path('bills/delete/<int:bill_id>/', views.delete_bill, name='delete_bill'),
     path('bills/create_bill/', views.create_bill, name='create_bill'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice #{{ bill.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .header h2 {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .bill-info p {
+            margin: 2px 0;
+            font-size: 14px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+        .col {
+            flex: 1;
+        }
+        .text-right {
+            text-align: right;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            font-size: 13px;
+        }
+        table th {
+            background-color: #f8f9fa;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-end {
+            text-align: right;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+        }
+        .total-row {
+            background-color: #343a40;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h2>INVOICE</h2>
+        </div>
+
+        <!-- Bill Information -->
+        <div class="bill-info">
+            <div class="row">
+                <div class="col">
+                    <p><strong>Bill #:</strong> {{ bill.id }}</p>
+                    <p><strong>Date:</strong> {{ bill.createdAt|date:"F d, Y" }}</p>
+                    <p><strong>Customer:</strong> {{ bill.customerName }}</p>
+                </div>
+                <div class="col text-right">
+                    <p><strong>Issued By:</strong> {{ bill.user.username }}</p>
+                    <p><strong>Payment Status:</strong> Paid</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-end">Unit Price</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in bill_details %}
+                <tr>
+                    <td>{{ item.productID.name }}</td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-end">${{ item.unitPrice }}</td>
+                    <td class="text-end">${{ item.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                {% if bill.discount > 0 %}
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                    <td class="text-end">${{ subtotal }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Discount ({{ bill.discount }}%):</strong></td>
+                    <td class="text-end text-danger">- ${{ discount_amount }}</td>
+                </tr>
+                {% endif %}
+                <tr class="total-row fw-bold">
+                    <td colspan="3" class="text-end">Total:</td>
+                    <td class="text-end">${{ bill.totalAmount }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for your business!</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -169,4 +169,19 @@
             });
         });
     </script>
+    <script>
+        $(document).ready(function() {
+            // Check for PDF URL in query parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const pdfUrl = urlParams.get('pdf_url');
+
+            if (pdfUrl) {
+                // Trigger PDF download
+                window.open(pdfUrl, '_blank');
+
+                // Remove the parameter from URL to prevent multiple downloads on refresh
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+    </script>
 {% endblock %}

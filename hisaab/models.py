@@ -23,6 +23,7 @@ class Bill(models.Model):
         (10, "10%"),
         (15, "15%"),
     ]
+    pdf_path = models.CharField(max_length=255, blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # Set user to NULL if deleted
     customerName = models.CharField(max_length=255, blank=True, null=True)
@@ -31,6 +32,11 @@ class Bill(models.Model):
 
     def __str__(self):
         return f"{self.id}"
+
+    def generate_pdf(self, context, template):
+        from hisaab.helpers import Render
+        filename = f"bill_{self.id}"
+        return Render.render_to_file(template, context, filename)
 
 
 class Category(models.Model):
