@@ -3,7 +3,7 @@ asgiref==3.8.1
 atomicwrites==1.4.0
 cssselect2==0.2.1
 dj-database-url==2.3.0
-Django==5.1.5
+Django==5.0.4
 jsonpointer==2.1
 matplotlib==3.9.2
 protobuf==4.25.3
