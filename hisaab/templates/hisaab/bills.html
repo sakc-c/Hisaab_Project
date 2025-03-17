@@ -35,9 +35,9 @@
                 <td>${{ bill.totalAmount }}</td>
                 <td>{{ bill.createdAt }}</td>
                 <td>
-                    {% if bill.pdf_path %}
-                        <a href="{{ MEDIA_URL }}{{ bill.pdf_path }}" class="btn btn-sm btn-primary" download>
-                            <i class="bi bi-download"></i>
+                    {% if bill %}
+                        <a href="{% url 'download_pdf' bill.id %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-download"></i> Download Bill PDF
                         </a>
                     {% endif %}
                     {% if request.user|has_group:"h_admin" %}
