@@ -37,7 +37,7 @@
                 <td>
                     {% if bill %}
                         <a href="{% url 'download_pdf' bill.id %}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-download"></i> Download Bill PDF
+                            <i class="bi bi-download"></i>
                         </a>
                     {% endif %}
                     {% if request.user|has_group:"h_admin" %}
