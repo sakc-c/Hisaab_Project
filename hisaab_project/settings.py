@@ -25,10 +25,10 @@ MEDIA_DIR = os.path.join(BASE_DIR,'media')
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-s#)xpk4*uc+x(wg66qasc_e__a=p1k%!^^1@k+2t^^f@gu81&3'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["35.178.177.216", "localhost", "127.0.0.1"]
 
@@ -124,6 +124,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+STATIC_ROOT = '/home/ubuntu/code/Hisaab_Project/static/'
 STATIC_URL = 'static/'
 
 MEDIA_ROOT = MEDIA_DIR
