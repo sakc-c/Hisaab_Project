@@ -7,7 +7,7 @@ from . import views
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
-    path('login/', views.user_login, name='login'),  
+    path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
     path('inventory/', views.inventory, name='inventory'),
     path('bills/', views.bills, name='bills'),
@@ -29,6 +29,7 @@ urlpatterns = [
     path('bills/', views.bills, name='bills'),
     path('bills/delete/<int:bill_id>/', views.delete_bill, name='delete_bill'),
     path('bills/create_bill/', views.create_bill, name='create_bill'),
+    path('bills/download_pdf/<int:bill_id>/', views.download_pdf, name='download_pdf'),
 ]
 
 if settings.DEBUG:

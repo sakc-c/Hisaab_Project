@@ -20,6 +20,7 @@ from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswo
 from hisaab.models import Category, Product, Bill, BillDetails
 
 from django.contrib.auth.models import Group
+from hisaab.helpers import get_bill_context
 
 
 def user_login(request):
@@ -369,14 +370,15 @@ def create_bill(request):
                                 })
 
                     # Apply discount, ensuring both values are Decimal
-                    total = total * (1 - Decimal(discount) / Decimal(100))
+                    discount_amount = total * (Decimal(discount) / Decimal(100))
+                    final_total = total - discount_amount
 
                     # Create the bill entry in the database
                     bill = Bill.objects.create(
                         user=request.user,
                         customerName=customer_name,
                         discount=discount,
-                        totalAmount=total
+                        totalAmount=final_total
                     )
 
                     # Loop through the products and quantities to create BillDetails entries
@@ -399,40 +401,10 @@ def create_bill(request):
                         product.stockLevel -= quantity
                         product.save()
 
-                        # Generate PDF for the bill
-                        bill_details = BillDetails.objects.filter(billID=bill)
-                        subtotal = sum(detail.amount for detail in bill_details)
-                        discount_amount = subtotal * (Decimal(discount) / Decimal(100))
+                    context = get_bill_context(bill) #get the context for the PDF
 
-                        context = {
-                            'bill': bill,
-                            'bill_details': bill_details,
-                            'subtotal': subtotal,
-                            'discount_amount': discount_amount,
-                        }
-
-                        # Generate PDF and store it
-                        pdf_path = bill.generate_pdf(context, "hisaab/bill_pdf.html")
-
-                        # Save the PDF path to the bill
-                        if pdf_path:
-                            bill.pdf_path = pdf_path
-                            bill.save()
-
-                            # Construct the full PDF URL for download
-                            pdf_url = request.build_absolute_uri(settings.MEDIA_URL + pdf_path)
-                        else:
-                            pdf_url = None
-
-                        # Use reverse to get the correct bills URL
-                        from django.urls import reverse
-                        bills_url = reverse('bills')
-
-                        # Redirect with PDF URL if available
-                        if pdf_url:
-                            return redirect(f"{bills_url}?pdf_url={pdf_url}")
-                        else:
-                            return redirect('bills')
+                    # Generate and send PDF as a response
+                    return bill.generate_pdf(context, "hisaab/bill_pdf.html")
 
             except ValueError as e:
                 # Handle insufficient stock error
@@ -469,5 +441,16 @@ def delete_bill(request, bill_id):
         bill.delete()  # Delete the Bill
 
         return redirect('bills')  # Redirect to the bills list page
+    else:
+        return render(request, 'hisaab/login.html')
+
+
+def download_pdf(request, bill_id):
+
+    if request.user.is_authenticated:
+        bill = Bill.objects.get(id=bill_id)
+        context = get_bill_context(bill) # Get the context for the PDF
+        response = bill.generate_pdf(context, "hisaab/bill_pdf.html") # Use the Render class to generate the PDF dynamically
+        return response
     else:
         return render(request, 'hisaab/login.html')

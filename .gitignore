@@ -8,3 +8,4 @@ __pycache__/
 # ignore virtual env files
 env/
 venv/
+.env
