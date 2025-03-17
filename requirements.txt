@@ -7,7 +7,6 @@ Django==4.2.20
 jsonpointer==2.1
 matplotlib==3.9.2
 protobuf==4.25.3
-psycopg2==2.9.10
 psycopg2-binary==2.9.10
 pyasn1-modules==0.2.8
 pycairo==1.25.0
