@@ -1,5 +1,13 @@
 {% extends 'hisaab/base.html' %}
 {% block content %}
+    <!-- Display any error or success messages -->
+        {% if messages %}
+            <div class="alert alert-info" role="alert">
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+            </div>
+        {% endif %}
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-2">Inventory Categories</h2>
@@ -8,19 +16,33 @@
         </button>
     </div>
 
+    <!-- Display form errors if any -->
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
     <div class="row">
         {% for category in categories %}
             <div class="col-md-4 mb-4">
                 <div class="card">
-                    <img src="{{ category.image_url|default:'default_image_url_here' }}" class="card-img-top"
+                    <!-- Use default image URL from model if image_url is None -->
+                    <img src="{{ category.image_url|default:category.DEFAULT_IMAGE_URL }}" class="card-img-top"
                          alt="{{ category.name }}" style="max-width: 100%; height: 200px; object-fit: cover;">
 
                     <div class="card-body">
                         <h5 class="card-title">{{ category.name }}</h5>
                         <p class="card-text">{{ category.description }}</p>
-                        {% if category.categoryID %}
-                            <a href="{% url 'category' category.categoryID %}" class="btn btn-primary">View Category</a>
-                            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#editCategoryModal{{ category.categoryID }}">
+                        {% if category.id %}
+                            <a href="{% url 'category' category.id %}" class="btn btn-primary">View Category</a>
+                            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#editCategoryModal{{ category.id }}">
                                 Edit Category
                             </button>
                         {% endif %}
@@ -29,7 +51,7 @@
             </div>
 
             <!-- Edit Category Modal -->
-            <div class="modal fade" id="editCategoryModal{{ category.categoryID }}" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+            <div class="modal fade" id="editCategoryModal{{ category.id }}" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -37,31 +59,31 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form method="post" action="{% url 'edit_category' category.categoryID %}">
+                            <form method="post" action="{% url 'edit_category' category.id %}">
                                 {% csrf_token %}
 
                                 <!-- Category Name -->
                                 <div class="mb-3">
-                                    <label for="name{{ category.categoryID }}" class="form-label">Category Name</label>
-                                    <input type="text" class="form-control" id="name{{ category.categoryID }}" name="name" value="{{ category.name }}">
+                                    <label for="name{{ category.id }}" class="form-label">Category Name</label>
+                                    <input type="text" class="form-control" id="name{{ category.id }}" name="name" value="{{ category.name }}">
                                 </div>
 
                                 <!-- Category Description -->
                                 <div class="mb-3">
-                                    <label for="description{{ category.categoryID }}" class="form-label">Description</label>
-                                    <textarea class="form-control" id="description{{ category.categoryID }}" name="description" rows="3">{{ category.description }}</textarea>
+                                    <label for="description{{ category.id }}" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description{{ category.id }}" name="description" rows="3">{{ category.description }}</textarea>
                                 </div>
 
                                 <!-- Category Image URL (Optional) -->
                                 <div class="mb-3">
-                                    <label for="image_url{{ category.categoryID }}" class="form-label">Image URL</label>
-                                    <input type="url" class="form-control" id="image_url{{ category.categoryID }}" name="image_url" value="{{ category.image_url }}">
+                                    <label for="image_url{{ category.id }}" class="form-label">Image URL</label>
+                                    <input type="url" class="form-control" id="image_url{{ category.id }}" name="image_url" value="{{ category.image_url }}">
                                 </div>
                                 <button type="submit" class="btn btn-primary">Save Changes</button>
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <form method="post" action="{% url 'delete_category' category.categoryID %}" onsubmit="return confirm('Are you sure you want to delete this category?');">
+                            <form method="post" action="{% url 'delete_category' category.id %}" onsubmit="return confirm('Are you sure you want to delete this category?');">
                                 {% csrf_token %}
                                 <!-- Delete Category Button -->
                                 <button type="submit" class="btn btn-danger">Delete Category</button>

@@ -1,9 +1,13 @@
+
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
+from django.conf.urls.static import static
+from hisaab_project import settings
 from . import views
 
 urlpatterns = [
-    path('', views.user_login, name='login'),  # Default route to Sign-in page
+    path('', views.dashboard, name='dashboard'),
+    path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('profile/', views.profile, name='profile'),
@@ -29,4 +33,8 @@ urlpatterns = [
     path('bills/', views.bills, name='bills'),
     path('bills/delete/<int:bill_id>/', views.delete_bill, name='delete_bill'),
     path('bills/create_bill/', views.create_bill, name='create_bill'),
+    path('bills/download_pdf/<int:bill_id>/', views.download_pdf, name='download_pdf'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

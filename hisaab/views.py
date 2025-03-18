@@ -1,8 +1,9 @@
 from decimal import Decimal
+from sqlite3 import IntegrityError
 
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, JsonResponse
+from django.contrib import messages
 
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse
@@ -12,12 +13,15 @@ from django.contrib.auth.hashers import check_password
 from django.db.models import Count, Sum
 from django.contrib.auth import get_user_model
 
+from hisaab_project import settings
+
 User = get_user_model()
 
 from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswordChangeForm, BillForm
 from hisaab.models import Category, Product, Bill, BillDetails
 
 from django.contrib.auth.models import Group
+from hisaab.helpers import get_bill_context
 
 
 def user_login(request):
@@ -27,15 +31,11 @@ def user_login(request):
         user = authenticate(username=username, password=password)
 
         if user:
-            if user.is_active:
-                login(request, user)
-                return redirect(reverse('dashboard'))
-            else:
-                return HttpResponse("Your Rango account is disabled.")
+            login(request, user)
+            return redirect(reverse('dashboard'))
         else:
-            return HttpResponse("Invalid login details supplied.")
-    else:
-        return render(request, 'hisaab/login.html')
+            messages.error(request, "Invalid username or password.")
+    return render(request, 'hisaab/login.html')
 
 
 def user_logout(request):
@@ -52,9 +52,9 @@ def dashboard(request):
             .order_by('-count')[:3]
         )
         top_three_revenue_generating_products = (
-           BillDetails.objects.values('productID', 'productID__name')
-           .annotate(total_revenue=Sum('amount'))
-           .order_by('-total_revenue')[:3]
+            BillDetails.objects.values('productID', 'productID__name')
+            .annotate(total_revenue=Sum('amount'))
+            .order_by('-total_revenue')[:3]
         )
         sold_labels = [item['productID__name'] for item in top_three_products_sold]
         sold_data = [item['count'] for item in top_three_products_sold]
@@ -88,6 +88,7 @@ def create_user(request):
             user.save()
             user.groups.set(user_form.cleaned_data['groups'])  # workaround this?
             registered = True
+            return redirect('user_management')
         else:
             errors = user_form.errors
     return render(request, 'hisaab/create_user.html',
@@ -147,7 +148,16 @@ def bills(request):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name__in=['h_admin', 'cashier']).exists():
             return render(request, 'hisaab/unauthorised.html')
-        return render(request, 'hisaab/bills.html', {'bills': []})  # Pass bills data
+
+        # Get all bills for display
+        bills = Bill.objects.all().order_by('-createdAt')  # Most recent bills first
+
+        context = {
+            'bills': bills,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        return render(request, 'hisaab/bills.html', context)
     else:
         return render(request, 'hisaab/login.html')
 
@@ -175,18 +185,25 @@ def add_category(request):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name='h_admin').exists():
             return render(request, 'hisaab/unauthorised.html')
+
         if request.method == 'POST':
             form = CategoryForm(request.POST, request.FILES)
             if form.is_valid():
-                form.save()  # Saves the category
-                return redirect('inventory')  # Redirect back to the inventory page after adding a category
+                try:
+                    form.save()  # Save the category
+                    messages.success(request, "Category added successfully!")  # Success message
+                    return redirect('inventory')
+                except Exception as e:
+                    messages.error(request, f"Error: {e}")
+                    return redirect('inventory')  # Redirect to inventory in case of failure
             else:
-                return render(request, 'hisaab/InventoryMain.html',
-                              {'form': form, 'errors': form.errors})  # display the errors later
+                messages.error(request, "Category with this name already exists.")  # Show error for duplicate name
+                return redirect('inventory')
         else:
             form = CategoryForm()
 
         return render(request, 'hisaab/InventoryMain.html', {'form': form})
+
     else:
         return render(request, 'hisaab/login.html')
 
@@ -196,7 +213,7 @@ def edit_category(request, category_id):
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
 
-        category = get_object_or_404(Category, categoryID=category_id)
+        category = get_object_or_404(Category, id=category_id)
 
         if request.method == 'POST':
             form = CategoryForm(request.POST, instance=category)
@@ -219,7 +236,7 @@ def delete_category(request, category_id):
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
 
-        category = get_object_or_404(Category, categoryID=category_id)
+        category = get_object_or_404(Category, id=category_id)
         category.delete()
         return redirect('inventory')  # Redirect to the inventory page after deletion
     else:
@@ -230,8 +247,8 @@ def category_detail(request, category_id):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
-        category = get_object_or_404(Category, categoryID=category_id)
-        inventory_items = Product.objects.filter(categoryID=category_id)  # Ensure filtering correctly
+        category = get_object_or_404(Category, id=category_id)
+        inventory_items = Product.objects.filter(categoryID=category)  # Ensure filtering correctly
 
         return render(request, 'hisaab/category.html', {
             'category': category,
@@ -246,23 +263,23 @@ def edit_product(request, product_id):
         if not request.user.groups.filter(name__in=['h_admin', 'inventory_manager']).exists():
             return render(request, 'hisaab/unauthorised.html')
 
-        product = get_object_or_404(Product, productID=product_id)
+        product = get_object_or_404(Product, id=product_id)
 
         if request.method == 'POST':
             form = ProductForm(request.POST, instance=product)
             category_id = request.POST.get('categoryID')
             if category_id:
                 try:
-                    form.instance.categoryID = Category.objects.get(categoryID=category_id)
+                    form.instance.categoryID = Category.objects.get(id=category_id)
                 except (ValueError, Category.DoesNotExist) as e:
-                    return redirect('category', category_id=product.categoryID.categoryID)
+                    return redirect('category', category_id=product.categoryID.id)
 
             if form.is_valid():
                 form.save()  # Save the form with updated product and category
-                return redirect('category', category_id=product.categoryID.categoryID)  # Redirect to category page
+                return redirect('category', category_id=product.categoryID.id)  # Redirect to category page
             else:
                 print(form.errors)
-                return redirect('category', category_id=product.categoryID.categoryID)
+                return redirect('category', category_id=product.categoryID.id)
 
         else:
             form = ProductForm(instance=product)
@@ -281,8 +298,8 @@ def delete_product(request, product_id):
             return render(request, 'hisaab/unauthorised.html')
 
         # Use productID instead of id
-        product = get_object_or_404(Product, productID=product_id)
-        category_id = product.categoryID.categoryID  # Get the category ID before deleting the product
+        product = get_object_or_404(Product, id=product_id)
+        category_id = product.categoryID.id  # Get the category ID before deleting the product
         product.delete()
         return redirect('category', category_id=category_id)
     else:
@@ -298,7 +315,7 @@ def add_product(request):
             form = ProductForm(request.POST)
             if form.is_valid():
                 product = form.save(commit=False)
-                product.createdBy = request.user  # Automatically set createdBy to the current user
+                product.user = request.user  # Automatically set createdBy to the current user
                 product.save()
                 return redirect('category', category_id=request.POST.get('categoryID'))
             else:
@@ -315,7 +332,13 @@ def bills(request):
         user_groups = list(request.user.groups.values_list('name', flat=True))
         bills = Bill.objects.all()
         products = Product.objects.all()
-        return render(request, 'hisaab/bills.html', {'bills': bills, 'products': products, 'user_groups': user_groups})
+        context = {
+            'bills': bills,
+            'products': products,
+            'user_groups': user_groups,
+            'MEDIA_URL': settings.MEDIA_URL,  # Pass MEDIA_URL to the template
+        }
+        return render(request, 'hisaab/bills.html', context)
     else:
         return render(request, 'hisaab/login.html')
 
@@ -361,14 +384,15 @@ def create_bill(request):
                                 })
 
                     # Apply discount, ensuring both values are Decimal
-                    total = total * (1 - Decimal(discount) / Decimal(100))
+                    discount_amount = total * (Decimal(discount) / Decimal(100))
+                    final_total = total - discount_amount
 
                     # Create the bill entry in the database
                     bill = Bill.objects.create(
-                        userID=request.user,
+                        user=request.user,
                         customerName=customer_name,
                         discount=discount,
-                        totalAmount=total
+                        totalAmount=final_total
                     )
 
                     # Loop through the products and quantities to create BillDetails entries
@@ -391,7 +415,10 @@ def create_bill(request):
                         product.stockLevel -= quantity
                         product.save()
 
-                    return redirect('bills')  # Redirect to the bills page
+                    context = get_bill_context(bill)  # get the context for the PDF
+
+                    # Generate and send PDF as a response
+                    return bill.generate_pdf(context, "hisaab/bill_pdf.html")
 
             except ValueError as e:
                 # Handle insufficient stock error
@@ -413,7 +440,6 @@ def create_bill(request):
     })
 
 
-
 def delete_bill(request, bill_id):
     if request.user.is_authenticated:
         bill = get_object_or_404(Bill, pk=bill_id)
@@ -429,5 +455,16 @@ def delete_bill(request, bill_id):
         bill.delete()  # Delete the Bill
 
         return redirect('bills')  # Redirect to the bills list page
+    else:
+        return render(request, 'hisaab/login.html')
+
+
+def download_pdf(request, bill_id):
+    if request.user.is_authenticated:
+        bill = Bill.objects.get(id=bill_id)
+        context = get_bill_context(bill)  # Get the context for the PDF
+        response = bill.generate_pdf(context,
+                                     "hisaab/bill_pdf.html")  # Use the Render class to generate the PDF dynamically
+        return response
     else:
         return render(request, 'hisaab/login.html')

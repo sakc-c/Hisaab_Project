@@ -11,7 +11,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 import dj_database_url
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,13 +25,14 @@ MEDIA_DIR = os.path.join(BASE_DIR,'media')
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-s#)xpk4*uc+x(wg66qasc_e__a=p1k%!^^1@k+2t^^f@gu81&3'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["35.178.177.216", "localhost", "127.0.0.1", "hisaab.site"]
 
+CSRF_TRUSTED_ORIGINS = ["https://hisaab.site"]
 
 # Application definition
 
@@ -73,14 +77,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'hisaab_project.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+# Amazon RDS Postgres Database
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgresql://postgres1:pihT9sviCNJEMP8QfdZPcnVOxDUG4LxK@dpg-cv4bnl2n91rc73dv6oog-a.oregon-postgres.render.com/hisaab_ninv',
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'hisaab_db'),
+        'USER': os.getenv('DB_USER', 'hisaab_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'database-1.cpmyaeygcdeh.eu-west-2.rds.amazonaws.com'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+    }
 }
 
 
@@ -118,6 +125,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+STATIC_ROOT = '/home/ubuntu/code/Hisaab_Project/static/'
 STATIC_URL = 'static/'
 
 MEDIA_ROOT = MEDIA_DIR

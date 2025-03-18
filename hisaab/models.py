@@ -1,31 +1,22 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group
-from django.db.models import Max
 
-class User(AbstractUser): #AbstractUser for password hashing
-    userID = models.IntegerField(unique=True, blank=True, null=True)
+
+class User(AbstractUser):  # AbstractUser for password hashing
     createdAt = models.DateTimeField(auto_now_add=True)
-
-    REQUIRED_FIELDS = ['userID']
-
-    def save(self, *args, **kwargs):
-        if self.userID is None:
-            max_user_id = User.objects.aggregate(Max('userID'))['userID__max']
-            self.userID = (max_user_id or 0) + 1
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
 
 
 class Report(models.Model):
-    reportID = models.AutoField(primary_key=True)
     createdAt = models.DateTimeField(auto_now_add=True)
-    userID = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # Set user to NULL if deleted
     reportType = models.CharField(max_length=100)
 
     def __str__(self):
-        return str(self.reportID)
+        return str(self.id)
+
 
 class Bill(models.Model):
     DISCOUNT_CHOICES = [
@@ -34,23 +25,27 @@ class Bill(models.Model):
         (10, "10%"),
         (15, "15%"),
     ]
-    billID = models.AutoField(primary_key=True)
     createdAt = models.DateTimeField(auto_now_add=True)
-    userID = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # Set user to NULL if deleted
     customerName = models.CharField(max_length=255, blank=True, null=True)
     totalAmount = models.DecimalField(decimal_places=2, max_digits=20)
     discount = models.IntegerField(choices=DISCOUNT_CHOICES, default=5)
 
     def __str__(self):
-        return f"{self.billID}"
+        return f"{self.id}"
+
+    def generate_pdf(self, context, template):
+        from hisaab.helpers import Render
+        filename = f"bill_{self.id}"
+        return Render.render_to_response(template, context, filename)
 
 
 class Category(models.Model):
     NAME_MAX_LENGTH = 128
-    categoryID = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=NAME_MAX_LENGTH)
+    DEFAULT_IMAGE_URL = "https://fiveislands.scilly.sch.uk/wp-content/themes/block-theme/images/default.jpg"
+    name = models.CharField(max_length=NAME_MAX_LENGTH, unique=True)
     description = models.TextField()
-    image_url = models.URLField(max_length=255, null=True)
+    image_url = models.URLField(max_length=255, null=True, blank=True, default=DEFAULT_IMAGE_URL)
 
     class Meta:
         verbose_name_plural = "Categories"
@@ -58,20 +53,24 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+
 class Product(models.Model):
     NAME_MAX_LENGTH = 128
-    productID = models.AutoField(primary_key=True)
     name = models.CharField(max_length=NAME_MAX_LENGTH)
-    categoryID = models.ForeignKey(Category, on_delete=models.CASCADE)
+    categoryID = models.ForeignKey(Category, on_delete=models.PROTECT)
     unitPrice = models.DecimalField(decimal_places=2, max_digits=20)
     stockLevel = models.IntegerField()
-    createdBy = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # Set user to NULL if deleted
+
+    class Meta:
+        unique_together = ("categoryID", "name")  # Ensure unique combination of category and product
 
     def __str__(self):
         return self.name
 
+
 class BillDetails(models.Model):
-    billID = models.ForeignKey(Bill, on_delete=models.CASCADE)
+    billID = models.ForeignKey(Bill, on_delete=models.CASCADE)  # ForeignKey to Bill
     productID = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     unitPrice = models.DecimalField(decimal_places=2, max_digits=20)
@@ -81,9 +80,9 @@ class BillDetails(models.Model):
         unique_together = (("billID", "productID"),)
 
     def __str__(self):
-        return f"Bill ID: {self.billID.billID}"  # Return just the Bill ID as an integer
+        return f"Bill {self.billID.id}: {self.productID.name}"  # Return Bill ID and Product Name
 
-    def save(self, *args, **kwargs): #Overriding Default Save Behavior
-        #calculate the amount based on quantity and unitPrice
+    def save(self, *args, **kwargs):  # Overriding Default Save Behavior
+        # calculate the amount based on quantity and unitPrice
         self.amount = self.quantity * self.unitPrice
         super(BillDetails, self).save(*args, **kwargs)

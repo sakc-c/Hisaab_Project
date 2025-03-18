@@ -38,8 +38,11 @@
                                 <label for="product_1" class="form-label">Product:</label>
                                 <select class="form-select" name="product_1" required>
                                     {% for product in products %}
-                                        <option value="{{ product.productID }}"
-                                                data-price="{{ product.unitPrice }}">{{ product.name }}</option>
+                                        <option value="{{ product.id }}"
+                                                data-price="{{ product.unitPrice }}"
+                                                data-stock="{{ product.stockLevel }}">
+                                            {{ product.name }}
+                                        </option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -94,79 +97,94 @@
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        $(document).ready(function () {
-            function setPrice(row) {
-                const selectedOption = row.find('select option:selected');
-                const priceField = row.find('input[name^="price_"]');
-                priceField.val(selectedOption.data('price'));
+<script>
+    $(document).ready(function () {
+        function setPriceAndCheckStock(row) {
+            const selectedOption = row.find('select option:selected');
+            const priceField = row.find('input[name^="price_"]');
+            const quantity = parseInt(row.find('input[type="number"]').val()) || 0;
+            const stock = parseInt(selectedOption.data('stock')) || 0;
+            const errorMessage = row.find('.stock-error');
+
+            // Set the price for the selected product
+            priceField.val(selectedOption.data('price'));
+
+            // Check if stock is sufficient
+            if (quantity > stock) {
+                if (errorMessage.length === 0) {
+                    row.append('<div class="stock-error text-danger">Not enough stock available!</div>');
+                }
+            } else {
+                errorMessage.remove();
             }
+        }
 
-            // Show prices for selected products
-            $('select[name^="product_"]').each(function () {
-                setPrice($(this).closest('.product-row'));
-            });
-
-            // Function to add a new product row
-            $('#productFields').on('click', '.add-product', function () {
-                const productRow = $('.product-row').first().clone(); // Clone the first product row
-                const productCount = $('.product-row').length + 1; // Calculate the next product row number
-
-                // Update the name attributes of the new row to match the form fields
-                productRow.find('select').attr('name', `product_${productCount}`);
-                productRow.find('input[type="number"]').attr('name', `quantity_${productCount}`);
-                productRow.find('input[readonly]').attr({
-                    name: `price_${productCount}`,
-                    id: `price_${productCount}`
-                });
-
-                // Clear the quantity and price fields in the new row
-                productRow.find('input[type="number"]').val(1);
-                productRow.find('input[readonly]').val('');
-
-                // Change the button to remove the row (and add a minus sign)
-                const button = productRow.find('button');
-                button.text('-')
-                    .removeClass('add-product btn-success')
-                    .addClass('btn-danger remove-product');
-
-                // Append the new row to the productFields div
-                $('#productFields').append(productRow);
-
-                // Set the initial price for the new product row
-                setPrice(productRow);
-            });
-
-            // Function to remove a product row
-            $('#productFields').on('click', '.remove-product', function () {
-                $(this).closest('.product-row').remove();
-            });
-
-            // Update the price field when a product is selected
-            $('#productFields').on('change', 'select', function () {
-                setPrice($(this).closest('.product-row'));
-            });
-
-            // Generate Total button handler
-            $('#generateTotal').on('click', function () {
-                let total = 0;
-
-                // Loop through all product rows
-                $('.product-row').each(function () {
-                    const quantity = parseInt($(this).find('input[type="number"]').val()) || 0;
-                    const price = parseFloat($(this).find('input[readonly]').val()) || 0;
-                    total += quantity * price;
-                });
-
-                // Apply discount
-                const discount = parseInt($('#discount').val()) || 0;
-                total = total * (1 - discount / 100);
-
-                // Update total field
-                $('#total').val(total.toFixed(2));
-
-                return true;
-            });
+        // Show prices for selected products
+        $('select[name^="product_"]').each(function () {
+            setPriceAndCheckStock($(this).closest('.product-row'));
         });
-    </script>
+
+        // Update the price and check stock when a product is selected or quantity is changed
+        $('#productFields').on('change', 'select, input[type="number"]', function () {
+            const row = $(this).closest('.product-row');
+            setPriceAndCheckStock(row);
+        });
+
+        // Function to add a new product row
+        $('#productFields').on('click', '.add-product', function () {
+            const productRow = $('.product-row').first().clone(); // Clone the first product row
+            const productCount = $('.product-row').length + 1; // Calculate the next product row number
+
+            // Update the name attributes of the new row to match the form fields
+            productRow.find('select').attr('name', `product_${productCount}`);
+            productRow.find('input[type="number"]').attr('name', `quantity_${productCount}`);
+            productRow.find('input[readonly]').attr({
+                name: `price_${productCount}`,
+                id: `price_${productCount}`
+            });
+
+            // Clear the quantity and price fields in the new row
+            productRow.find('input[type="number"]').val(1);
+            productRow.find('input[readonly]').val('');
+
+            // Change the button to remove the row (and add a minus sign)
+            const button = productRow.find('button');
+            button.text('-')
+                .removeClass('add-product btn-success')
+                .addClass('btn-danger remove-product');
+
+            // Append the new row to the productFields div
+            $('#productFields').append(productRow);
+
+            // Set the initial price for the new product row
+            setPriceAndCheckStock(productRow);
+        });
+
+        // Function to remove a product row
+        $('#productFields').on('click', '.remove-product', function () {
+            $(this).closest('.product-row').remove();
+        });
+
+        // Generate Total button handler
+        $('#generateTotal').on('click', function () {
+            let total = 0;
+
+            // Loop through all product rows
+            $('.product-row').each(function () {
+                const quantity = parseInt($(this).find('input[type="number"]').val()) || 0;
+                const price = parseFloat($(this).find('input[readonly]').val()) || 0;
+                total += quantity * price;
+            });
+
+            // Apply discount
+            const discount = parseInt($('#discount').val()) || 0;
+            total = total * (1 - discount / 100);
+
+            // Update total field
+            $('#total').val(total.toFixed(2));
+
+            return true;
+        });
+    });
+</script>
 {% endblock %}
