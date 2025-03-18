@@ -1,5 +1,13 @@
 {% extends 'hisaab/base.html' %}
 {% block content %}
+    <!-- Display any error or success messages -->
+        {% if messages %}
+            <div class="alert alert-info" role="alert">
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+            </div>
+        {% endif %}
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-2">Inventory Categories</h2>
@@ -8,11 +16,25 @@
         </button>
     </div>
 
+    <!-- Display form errors if any -->
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
     <div class="row">
         {% for category in categories %}
             <div class="col-md-4 mb-4">
                 <div class="card">
-                    <img src="{{ category.image_url|default:'default_image_url_here' }}" class="card-img-top"
+                    <!-- Use default image URL from model if image_url is None -->
+                    <img src="{{ category.image_url|default:category.DEFAULT_IMAGE_URL }}" class="card-img-top"
                          alt="{{ category.name }}" style="max-width: 100%; height: 200px; object-fit: cover;">
 
                     <div class="card-body">

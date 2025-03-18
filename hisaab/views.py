@@ -1,4 +1,5 @@
 from decimal import Decimal
+from sqlite3 import IntegrityError
 
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
@@ -178,18 +179,25 @@ def add_category(request):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name='h_admin').exists():
             return render(request, 'hisaab/unauthorised.html')
+
         if request.method == 'POST':
             form = CategoryForm(request.POST, request.FILES)
             if form.is_valid():
-                form.save()  # Saves the category
-                return redirect('inventory')  # Redirect back to the inventory page after adding a category
+                try:
+                    form.save()  # Save the category
+                    messages.success(request, "Category added successfully!")  # Success message
+                    return redirect('inventory')
+                except Exception as e:
+                    messages.error(request, f"Error: {e}")
+                    return redirect('inventory')  # Redirect to inventory in case of failure
             else:
-                return render(request, 'hisaab/InventoryMain.html',
-                              {'form': form, 'errors': form.errors})  # display the errors later
+                messages.error(request, "Category with this name already exists.")  # Show error for duplicate name
+                return redirect('inventory')
         else:
             form = CategoryForm()
 
         return render(request, 'hisaab/InventoryMain.html', {'form': form})
+
     else:
         return render(request, 'hisaab/login.html')
 
@@ -401,7 +409,7 @@ def create_bill(request):
                         product.stockLevel -= quantity
                         product.save()
 
-                    context = get_bill_context(bill) #get the context for the PDF
+                    context = get_bill_context(bill)  # get the context for the PDF
 
                     # Generate and send PDF as a response
                     return bill.generate_pdf(context, "hisaab/bill_pdf.html")
@@ -446,11 +454,11 @@ def delete_bill(request, bill_id):
 
 
 def download_pdf(request, bill_id):
-
     if request.user.is_authenticated:
         bill = Bill.objects.get(id=bill_id)
-        context = get_bill_context(bill) # Get the context for the PDF
-        response = bill.generate_pdf(context, "hisaab/bill_pdf.html") # Use the Render class to generate the PDF dynamically
+        context = get_bill_context(bill)  # Get the context for the PDF
+        response = bill.generate_pdf(context,
+                                     "hisaab/bill_pdf.html")  # Use the Render class to generate the PDF dynamically
         return response
     else:
         return render(request, 'hisaab/login.html')
