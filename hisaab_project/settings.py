@@ -34,6 +34,7 @@ ALLOWED_HOSTS = ["35.178.177.216", "localhost", "127.0.0.1", "hisaab.site"]
 
 CSRF_TRUSTED_ORIGINS = ["https://hisaab.site"]
 
+
 # Application definition
 
 INSTALLED_APPS = [
