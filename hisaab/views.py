@@ -175,7 +175,7 @@ def user_management(request):
     if request.user.is_authenticated:
         if not request.user.groups.filter(name='h_admin').exists():
             return render(request, 'hisaab/unauthorised.html')
-        users = User.objects.exclude(groups__name='h_admin')
+        users = User.objects.exclude(id=request.user.id)
         return render(request, 'hisaab/user_management.html', context={'users': users})
     else:
         return render(request, 'hisaab/login.html')
