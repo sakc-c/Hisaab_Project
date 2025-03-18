@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group
 
-class User(AbstractUser): #AbstractUser for password hashing
+
+class User(AbstractUser):  # AbstractUser for password hashing
     createdAt = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -15,6 +16,7 @@ class Report(models.Model):
 
     def __str__(self):
         return str(self.id)
+
 
 class Bill(models.Model):
     DISCOUNT_CHOICES = [
@@ -40,15 +42,17 @@ class Bill(models.Model):
 
 class Category(models.Model):
     NAME_MAX_LENGTH = 128
-    name = models.CharField(max_length=NAME_MAX_LENGTH)
+    DEFAULT_IMAGE_URL = "https://fiveislands.scilly.sch.uk/wp-content/themes/block-theme/images/default.jpg"
+    name = models.CharField(max_length=NAME_MAX_LENGTH, unique=True)
     description = models.TextField()
-    image_url = models.URLField(max_length=255, null=True)
+    image_url = models.URLField(max_length=255, null=True, blank=True, default=DEFAULT_IMAGE_URL)
 
     class Meta:
         verbose_name_plural = "Categories"
 
     def __str__(self):
         return self.name
+
 
 class Product(models.Model):
     NAME_MAX_LENGTH = 128
@@ -58,8 +62,12 @@ class Product(models.Model):
     stockLevel = models.IntegerField()
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # Set user to NULL if deleted
 
+    class Meta:
+        unique_together = ("categoryID", "name")  # Ensure unique combination of category and product
+
     def __str__(self):
         return self.name
+
 
 class BillDetails(models.Model):
     billID = models.ForeignKey(Bill, on_delete=models.CASCADE)  # ForeignKey to Bill
@@ -74,7 +82,7 @@ class BillDetails(models.Model):
     def __str__(self):
         return f"Bill {self.billID.id}: {self.productID.name}"  # Return Bill ID and Product Name
 
-    def save(self, *args, **kwargs): #Overriding Default Save Behavior
-        #calculate the amount based on quantity and unitPrice
+    def save(self, *args, **kwargs):  # Overriding Default Save Behavior
+        # calculate the amount based on quantity and unitPrice
         self.amount = self.quantity * self.unitPrice
         super(BillDetails, self).save(*args, **kwargs)

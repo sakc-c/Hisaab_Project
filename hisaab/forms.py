@@ -89,8 +89,16 @@ class CategoryForm(forms.ModelForm):
         fields = ['name', 'description', 'image_url']
 
     description = forms.CharField(widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Category description'}))
-    image_url = forms.URLField(widget=forms.URLInput(attrs={'placeholder': 'Image URL (optional)'}), required=False)
+    image_url = forms.URLField(
+        widget=forms.URLInput(attrs={'placeholder': 'Image URL (optional)'}),
+        required=False
+    )
 
+    def clean_image_url(self):
+        image_url = self.cleaned_data.get('image_url')
+        if not image_url:  # If no image provided, return the default
+            return Category._meta.get_field('image_url').get_default()
+        return image_url
 
 class ProductForm(forms.ModelForm):
     class Meta:
