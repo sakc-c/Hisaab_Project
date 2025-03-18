@@ -1,14 +1,18 @@
+
+from django.urls import path, reverse_lazy
+from django.contrib.auth import views as auth_views
 from django.conf.urls.static import static
-from django.urls import path
-
 from hisaab_project import settings
-
 from . import views
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('profile/', views.profile, name='profile'),
+    path('password_change/', auth_views.PasswordChangeView.as_view(success_url=reverse_lazy('profile'), template_name='hisaab/reset_password.html',), name='password_change'),
+    path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(), name='password_change_done'),
     path('inventory/', views.inventory, name='inventory'),
     path('bills/', views.bills, name='bills'),
     path('reports/', views.reports, name='reports'),

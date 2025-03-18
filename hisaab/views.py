@@ -127,6 +127,12 @@ def delete_user(request, user_id):
     users = User.objects.exclude(groups__name='h_admin')
     return render(request, 'hisaab/user_management.html', context={'users': users})
 
+def profile(request):
+    if request.user.is_authenticated:
+        return render(request, 'hisaab/profile.html', context={'user': request.user})
+    else:
+        return render(request, 'hisaab/unauthorised.html')
+
 
 def inventory(request):
     if request.user.is_authenticated:
