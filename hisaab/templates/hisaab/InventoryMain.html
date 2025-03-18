@@ -2,7 +2,7 @@
 {% block content %}
     <!-- Display any error or success messages -->
         {% if messages %}
-            <div class="alert alert-info" role="alert">
+            <div class="alert alert-danger" role="alert">
                 {% for message in messages %}
                     {{ message }}
                 {% endfor %}
