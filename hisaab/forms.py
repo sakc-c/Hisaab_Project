@@ -96,8 +96,8 @@ class CategoryForm(forms.ModelForm):
 
     def clean_image_url(self):
         image_url = self.cleaned_data.get('image_url')
-        if not image_url:  # If no image provided, return the default
-            return Category._meta.get_field('image_url').get_default()
+        if not image_url:  # Allow empty input instead of forcing default
+            return None  # Ensure it saves as NULL in the database
         return image_url
 
 class ProductForm(forms.ModelForm):

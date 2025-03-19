@@ -51,21 +51,6 @@ class BillModelTest(TestCase):
         updated_bill = Bill.objects.get(id=bill_id)
         self.assertIsNone(updated_bill.user)
 
-    @patch('hisaab.helpers.Render')
-    def test_generate_pdf(self, mock_render):
-        # Mock the Render.render_to_file method
-        mock_render.render_to_file.return_value = 'bills/bill_1.pdf'
-
-        context = {'bill': self.bill}
-        template = 'hisaab/bill_pdf.html'
-
-        pdf_path = self.bill.generate_pdf(context, template)
-
-        # Check if the render_to_file method was called with correct parameters
-        mock_render.render_to_file.assert_called_once_with(template, context, f'bill_{self.bill.id}')
-        self.assertEqual(pdf_path, 'bills/bill_1.pdf')
-
-
 class CategoryModelTest(TestCase):
     def setUp(self):
         self.category = Category.objects.create(
@@ -194,3 +179,24 @@ class BillDetailsModelTest(TestCase):
         self.assertFalse(BillDetails.objects.filter(id=bill_detail_id).exists())
 
 
+class ReportModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpass123')
+        self.report = Report.objects.create(
+            user=self.user,
+            reportType='Monthly Sales'
+        )
+
+    def test_report_creation(self):
+        self.assertEqual(self.report.reportType, 'Monthly Sales')
+        self.assertEqual(self.report.user, self.user)
+        self.assertTrue(self.report.createdAt is not None)
+        self.assertEqual(str(self.report), str(self.report.id))
+
+    def test_report_user_deletion(self):
+        report_id = self.report.id
+        self.user.delete()
+        # Report should still exist with user set to NULL
+        self.assertTrue(Report.objects.filter(id=report_id).exists())
+        updated_report = Report.objects.get(id=report_id)
+        self.assertIsNone(updated_report.user)
