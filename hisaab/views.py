@@ -191,7 +191,6 @@ def add_category(request):
             if form.is_valid():
                 try:
                     form.save()  # Save the category
-                    messages.success(request, "Category added successfully!")  # Success message
                     return redirect('inventory')
                 except Exception as e:
                     messages.error(request, f"Error: {e}")
