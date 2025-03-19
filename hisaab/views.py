@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.shortcuts import redirect
 from django.contrib.auth.hashers import check_password
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, ProtectedError
 from django.contrib.auth import get_user_model
 
 from hisaab_project import settings
@@ -237,11 +237,15 @@ def delete_category(request, category_id):
             return render(request, 'hisaab/unauthorised.html')
 
         category = get_object_or_404(Category, id=category_id)
-        category.delete()
-        return redirect('inventory')  # Redirect to the inventory page after deletion
+        try:
+            category.delete()
+            messages.success(request, "Category deleted successfully.")
+        except ProtectedError:
+            messages.error(request, "Cannot delete this category because products are linked to it.")
+
+        return redirect('inventory')  # Redirect to inventory after deletion attempt
     else:
         return render(request, 'hisaab/login.html')
-
 
 def category_detail(request, category_id):
     if request.user.is_authenticated:
