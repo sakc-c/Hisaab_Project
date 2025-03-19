@@ -115,9 +115,9 @@ def change_password(request, user_id):
                   context={'username': user.get_username(), 'form': form, 'user_id': user.pk, 'errors': errors})
 
 
-def delete_user_page(request, user_id):
-    user = get_object_or_404(User, pk=user_id)
-    return render(request, 'hisaab/delete_user.html', context={'user': user})
+# def delete_user_page(request, user_id):
+#     user = get_object_or_404(User, pk=user_id)
+#     return render(request, 'hisaab/delete_user.html', context={'user': user})
 
 
 def delete_user(request, user_id):
