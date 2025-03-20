@@ -3,7 +3,10 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>User Management</h2>
+        <!-- Create User Button on the top right -->
+        <a href="{% url 'create_user' %}" class="btn btn-success">Create new user</a>
     </div>
+
     <table class="table table-bordered table-hover">
         <thead>
         <tr>
@@ -40,5 +43,5 @@
     </table>
     <hr>
     <h5>Just onboarded a new employee? Great! </h5>
-    <a href="{% url 'create_user' %}" class="btn btn-sm btn-warning">Create new user</a>
+
 {% endblock %}
