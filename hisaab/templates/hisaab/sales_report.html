@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales Report</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 10px;
+        }
+        .header {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            table-layout: fixed; /* to control column width */
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 4px; /* Reduced padding */
+            text-align: left;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        /* Column width specifications */
+        .col-id {
+            width: 15%;
+        }
+        .col-customer {
+            width: 35%;
+        }
+        .col-amount {
+            width: 25%;
+        }
+        .col-date {
+            width: 25%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">Sales Report</div>
+    <p><strong>Created By:</strong> {{ createdBy }}</p>
+    <p><strong>Date:</strong> {{ dateCreated }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="col-id">Bill ID</th>
+                <th class="col-customer">Customer Name</th>
+                <th class="col-amount">Amount</th>
+                <th class="col-date">Date Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bill in bills %}
+                <tr>
+                    <td class="col-id">{{ bill.id }}</td>
+                    <td class="col-customer">{{ bill.customerName }}</td>
+                    <td class="col-amount">${{ bill.totalAmount }}</td>
+                    <td class="col-date">{{ bill.createdAt }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">No sales records available.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group
 
+from hisaab.helpers import Render
+
 
 class User(AbstractUser):  # AbstractUser for password hashing
     createdAt = models.DateTimeField(auto_now_add=True)
@@ -17,6 +19,10 @@ class Report(models.Model):
     def __str__(self):
         return str(self.id)
 
+    def generate_pdf(self, context, template):
+
+        filename = f"report_{self.id}"
+        return Render.render_to_response(template, context, filename)
 
 class Bill(models.Model):
     DISCOUNT_CHOICES = [
@@ -35,7 +41,6 @@ class Bill(models.Model):
         return f"{self.id}"
 
     def generate_pdf(self, context, template):
-        from hisaab.helpers import Render
         filename = f"bill_{self.id}"
         return Render.render_to_response(template, context, filename)
 

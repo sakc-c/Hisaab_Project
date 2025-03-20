@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 
@@ -136,6 +137,7 @@ def delete_user(request, user_id):
     else:
         return render(request, 'hisaab/login.html')
 
+
 def profile(request):
     if request.user.is_authenticated:
         return render(request, 'hisaab/profile.html', context={'user': request.user})
@@ -254,6 +256,7 @@ def delete_category(request, category_id):
         return redirect('inventory')  # Redirect to inventory after deletion attempt
     else:
         return render(request, 'hisaab/login.html')
+
 
 def category_detail(request, category_id):
     if request.user.is_authenticated:
@@ -480,3 +483,67 @@ def download_pdf(request, bill_id):
         return response
     else:
         return render(request, 'hisaab/login.html')
+
+
+def reports_page(request):
+    print("Executing reports_page view")  # Unique debug message
+    reports = Report.objects.all()
+    print("Reports fetched:", reports)  # Debugging
+    return render(request, "hisaab/reports.html", {"reports": reports})
+
+
+def create_report(request, report_type):
+    # Create a new report entry in the database
+    report = Report.objects.create(user=request.user, reportType=report_type)
+
+    # Fetch all products and bills (based on report type)
+    all_products = Product.objects.all() if report_type == "stock" else None
+    all_bills = Bill.objects.all() if report_type == "sales" else None
+
+    # Context for the PDF (products for stock report or bills for sales report)
+    context = {
+        "report": report,
+        "createdBy": report.user.username if report.user else "Unknown",
+        "dateCreated": report.createdAt.strftime('%Y-%m-%d'),
+        "products": all_products,
+        "bills": all_bills,
+    }
+
+    # Generate the PDF based on the report type
+    template = "hisaab/stock_report.html" if report.reportType == "stock" else "hisaab/sales_report.html"
+    response = report.generate_pdf(context, template)  # Generate the PDF
+
+    return response  # Return the PDF response
+
+
+def download_report(request, report_id):
+    report = get_object_or_404(Report, pk=report_id)
+
+    # Determine context and template based on report type
+    if report.reportType == 'stock':
+        context = {
+            "report": report,
+            "createdBy": report.user.username,
+            "dateCreated": report.createdAt.strftime('%Y-%m-%d'),
+            "products": Product.objects.select_related("categoryID").all(),
+        }
+        template = "hisaab/stock_report.html"
+    elif report.reportType == 'sales':
+        context = {
+            "report": report,
+            "createdBy": report.user.username,
+            "dateCreated": report.createdAt.strftime('%Y-%m-%d'),
+            "bills": Bill.objects.all(),
+        }
+        template = "hisaab/sales_report.html"
+    else:
+        return HttpResponse("Invalid report type", status=400)
+
+    # Generate and return the PDF response
+    return report.generate_pdf(context, template)
+
+
+def delete_report(request, report_id):
+    report = get_object_or_404(Report, pk=report_id)
+    report.delete()  # Delete the report from the database
+    return redirect('reports_page')
