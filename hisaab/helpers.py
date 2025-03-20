@@ -6,10 +6,10 @@ from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from io import BytesIO
-from hisaab.models import BillDetails
 
 
 def get_bill_context(bill):
+    from hisaab.models import BillDetails
     bill_details = BillDetails.objects.filter(billID=bill)
     subtotal = sum(detail.amount for detail in bill_details)
     discount_amount = subtotal * (Decimal(bill.discount) / Decimal(100))
