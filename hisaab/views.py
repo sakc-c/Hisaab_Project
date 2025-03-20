@@ -344,6 +344,8 @@ def add_product(request):
 
 def bills(request):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'cashier']).exists():
+            return render(request, 'hisaab/unauthorised.html')
         user_groups = list(request.user.groups.values_list('name', flat=True))
         bills = Bill.objects.all()
         products = Product.objects.all()
@@ -361,6 +363,8 @@ def bills(request):
 def create_bill(request):
     if not request.user.is_authenticated:
         return render(request, 'hisaab/login.html')
+    if not request.user.groups.filter(name__in=['h_admin', 'cashier']).exists():
+        return render(request, 'hisaab/unauthorised.html')
 
     if request.method == "POST":
         form = BillForm(request.POST)
@@ -457,6 +461,8 @@ def create_bill(request):
 
 def delete_bill(request, bill_id):
     if request.user.is_authenticated:
+        if not request.user.groups.filter(name__in=['h_admin', 'cashier']).exists():
+            return render(request, 'hisaab/unauthorised.html')
         bill = get_object_or_404(Bill, pk=bill_id)
 
         # Restore stock for all products in the bill
