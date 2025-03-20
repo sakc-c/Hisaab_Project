@@ -1,38 +1,41 @@
 {% extends 'hisaab/base.html' %}
 {% block content %}
-<h2>Create a new user</h2>
-<form id="login_form" method="post" action="{% url 'create_user' %}">
-    {% csrf_token %}
-    <div class="mb-3">
-        <label class="form-label">Username</label>
-        <input type="text" class="form-control" name="username" value="" size="50" required/>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Password</label>
-        <input type="password"class="form-control" name="password" value="" size="50" required/>
-    </div>
-    <div class="mb-3">
-        <label class="form-label" for="id_groups">Group</label>
-        <select class="form-select" name="groups" required>
-            <option value="">Select Group</option>
-            {% for group in groups %}
-                <option value="{{ group.id }}" {% if group.id == form.groups.value %}selected{% endif %}>
-                    {{ group.name }}
-                </option>
-            {% endfor %}
-        </select>
-    </div>
-    <button type="submit" class="btn btn-primary w-100" value="submit">Create User</button>
-</form>
-{% if registered %}
-    <p>New user created!</p>
-{% endif %}
+    <h2>Create a new user</h2>
+    <form id="login_form" method="post" action="{% url 'create_user' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-control" name="username" value="" size="50" required/>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" name="password" value="" size="50" required/>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="id_groups">Role</label>
+            <div style="width: 100%; overflow: visible;">
+                <select class="form-select" name="groups" required style="min-width: 200%;">
+                    <option value="">Select Role</option>
+                    {% for group in groups %}
+                        <option value="{{ group.id }}" {% if group.id == form.groups.value %}selected{% endif %}>
+                            {{ group.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
 
-{% if errors %}
-    {% for field, field_errors in errors.items %}
-        {% for error in field_errors %}
-            <li>{{ error }}</li>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" value="submit">Create User</button>
+    </form>
+    {% if registered %}
+        <p>New user created!</p>
+    {% endif %}
+
+    {% if errors %}
+        {% for field, field_errors in errors.items %}
+            {% for error in field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
         {% endfor %}
-    {% endfor %}
-{% endif %}
+    {% endif %}
 {% endblock %}
