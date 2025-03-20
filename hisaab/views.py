@@ -486,21 +486,32 @@ def download_pdf(request, bill_id):
 
 
 def reports_page(request):
-    print("Executing reports_page view")  # Unique debug message
+    # Check if the user is logged in and admin
+    if not request.user.is_authenticated:
+        return render(request, 'hisaab/login.html')
+
+    if not request.user.groups.filter(name="h_admin").exists():
+        return render(request, 'hisaab/unauthorised.html')
+
     reports = Report.objects.all()
-    print("Reports fetched:", reports)  # Debugging
     return render(request, "hisaab/reports.html", {"reports": reports})
 
 
 def create_report(request, report_type):
-    # Create a new report entry in the database
+    # Check if the user is logged in and admin
+    if not request.user.is_authenticated:
+        return render(request, 'hisaab/login.html')
+
+    if not request.user.groups.filter(name="h_admin").exists():
+        return render(request, 'hisaab/unauthorised.html')
+
+        # Create a new report entry in the database
     report = Report.objects.create(user=request.user, reportType=report_type)
 
     # Fetch all products and bills (based on report type)
     all_products = Product.objects.all() if report_type == "stock" else None
     all_bills = Bill.objects.all() if report_type == "sales" else None
 
-    # Context for the PDF (products for stock report or bills for sales report)
     context = {
         "report": report,
         "createdBy": report.user.username if report.user else "Unknown",
@@ -509,14 +520,20 @@ def create_report(request, report_type):
         "bills": all_bills,
     }
 
-    # Generate the PDF based on the report type
     template = "hisaab/stock_report.html" if report.reportType == "stock" else "hisaab/sales_report.html"
     response = report.generate_pdf(context, template)  # Generate the PDF
 
-    return response  # Return the PDF response
+    return response
 
 
 def download_report(request, report_id):
+    # Check if the user is logged in and admin
+    if not request.user.is_authenticated:
+        return render(request, 'hisaab/login.html')
+
+    if not request.user.groups.filter(name="h_admin").exists():
+        return render(request, 'hisaab/unauthorised.html')
+
     report = get_object_or_404(Report, pk=report_id)
 
     # Determine context and template based on report type
@@ -544,6 +561,13 @@ def download_report(request, report_id):
 
 
 def delete_report(request, report_id):
+    # Check if the user is logged in and admin
+    if not request.user.is_authenticated:
+        return render(request, 'hisaab/login.html')
+
+    if not request.user.groups.filter(name="h_admin").exists():
+        return render(request, 'hisaab/unauthorised.html')
+
     report = get_object_or_404(Report, pk=report_id)
     report.delete()  # Delete the report from the database
     return redirect('reports_page')
