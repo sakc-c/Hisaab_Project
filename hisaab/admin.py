@@ -7,7 +7,7 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'description')
 
 class BillDetailsAdmin(admin.ModelAdmin):
-    list_display = ('billID', 'product_name', 'quantity', 'unitPrice', 'amount')  # Change 'bill' to 'billID'
+    list_display = ('id', 'product_name', 'quantity', 'unitPrice', 'amount')
 
     def product_name(self, obj):
         return obj.productID.name  # Access the product name through FK

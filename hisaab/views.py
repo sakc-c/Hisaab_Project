@@ -18,7 +18,7 @@ from hisaab_project import settings
 User = get_user_model()
 
 from hisaab.forms import CategoryForm, ProductForm, CreateUserForm, CustomPasswordChangeForm, BillForm
-from hisaab.models import Category, Product, Bill, BillDetails
+from hisaab.models import Category, Product, Bill, BillDetails, Report
 
 from django.contrib.auth.models import Group
 from hisaab.helpers import get_bill_context
@@ -121,11 +121,18 @@ def change_password(request, user_id):
 
 
 def delete_user(request, user_id):
-    # print("deleting account...")
-    user = get_object_or_404(User, pk=user_id)
-    user.delete()
-    users = User.objects.exclude(groups__name='h_admin')
-    return render(request, 'hisaab/user_management.html', context={'users': users})
+    if request.user.is_authenticated:
+        # Check user permission
+        if not request.user.groups.filter(name__in=['h_admin']).exists():
+            return render(request, 'hisaab/unauthorised.html')
+
+        # Get the user to delete
+        user = get_object_or_404(User, pk=user_id)
+        user.delete()
+        users = User.objects.exclude(groups__name='h_admin')
+        return redirect('user_management')
+    else:
+        return render(request, 'hisaab/login.html')
 
 def profile(request):
     if request.user.is_authenticated:
