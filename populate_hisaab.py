@@ -11,6 +11,18 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 def populate():
+    # Create three groups if they don't exist
+    group_names = ['h_admin', 'inventory_manager', 'cashier']
+    groups = {}
+
+    for group_name in group_names:
+        group, created = Group.objects.get_or_create(name=group_name)
+        groups[group_name] = group
+        if created:
+            print(f"Created Group: {group_name}")
+        else:
+            print(f"Group {group_name} already exists")
+
     # Create Users
     users = [
         {"username": "AdminUser", "password": "admin123"},
@@ -33,6 +45,16 @@ def populate():
         user.save()
         user_instances.append(user)
         print(f"Created User: {user}")
+    
+    # Add to appropriate groups
+    for i in range(4):
+        user_instances[i].groups.add(Group.objects.get(name="h_admin"))
+    for i in range(4, 7):
+        user_instances[i].groups.add(Group.objects.get(name="inventory_manager"))
+    for i in range(7, 10):
+        user_instances[i].groups.add(Group.objects.get(name="inventory_manager"))
+    user_instances[10].groups.add(Group.objects.get(name="h_admin"))
+    print("Added created users in appropriate groups")
 
     # Create Categories
     categories = [
@@ -51,16 +73,16 @@ def populate():
 
     # Create Products
     products = [
-        {"name": "Castrol 5W-30", "category": category_instances["Engine Oil"], "unitPrice": 50.00, "stockLevel": 100, "user": user_instances[1]},
-        {"name": "Bosch Brake Pads", "category": category_instances["Brake Pads"], "unitPrice": 120.00, "stockLevel": 50, "user": user_instances[1]},
-        {"name": "K&N Air Filter", "category": category_instances["Air Filters"], "unitPrice": 80.00, "stockLevel": 75, "user": user_instances[1]},
-        {"name": "Mobil 1 0W-40", "category": category_instances["Engine Oil"], "unitPrice": 60.00, "stockLevel": 90, "user": user_instances[0]},
-        {"name": "ACDelco Brake Pads", "category": category_instances["Brake Pads"], "unitPrice": 110.00, "stockLevel": 60, "user": user_instances[2]},
-        {"name": "FRAM Air Filter", "category": category_instances["Air Filters"], "unitPrice": 70.00, "stockLevel": 80, "user": user_instances[0]},
-        {"name": "NGK Iridium Spark Plug", "category": category_instances["Spark Plugs"], "unitPrice": 25.00, "stockLevel": 150, "user": user_instances[1]},
-        {"name": "Bosch Spark Plug", "category": category_instances["Spark Plugs"], "unitPrice": 30.00, "stockLevel": 140, "user": user_instances[2]},
-        {"name": "Prestone Coolant", "category": category_instances["Coolants"], "unitPrice": 40.00, "stockLevel": 95, "user": user_instances[0]},
-        {"name": "Zerex Coolant", "category": category_instances["Coolants"], "unitPrice": 45.00, "stockLevel": 85, "user": user_instances[2]},
+        {"name": "Castrol 5W-30", "categoryID": category_instances["Engine Oil"], "unitPrice": 50.00, "stockLevel": 100, "user": user_instances[1]},
+        {"name": "Bosch Brake Pads", "categoryID": category_instances["Brake Pads"], "unitPrice": 120.00, "stockLevel": 50, "user": user_instances[1]},
+        {"name": "K&N Air Filter", "categoryID": category_instances["Air Filters"], "unitPrice": 80.00, "stockLevel": 75, "user": user_instances[1]},
+        {"name": "Mobil 1 0W-40", "categoryID": category_instances["Engine Oil"], "unitPrice": 60.00, "stockLevel": 90, "user": user_instances[0]},
+        {"name": "ACDelco Brake Pads", "categoryID": category_instances["Brake Pads"], "unitPrice": 110.00, "stockLevel": 60, "user": user_instances[2]},
+        {"name": "FRAM Air Filter", "categoryID": category_instances["Air Filters"], "unitPrice": 70.00, "stockLevel": 80, "user": user_instances[0]},
+        {"name": "NGK Iridium Spark Plug", "categoryID": category_instances["Spark Plugs"], "unitPrice": 25.00, "stockLevel": 150, "user": user_instances[1]},
+        {"name": "Bosch Spark Plug", "categoryID": category_instances["Spark Plugs"], "unitPrice": 30.00, "stockLevel": 140, "user": user_instances[2]},
+        {"name": "Prestone Coolant", "categoryID": category_instances["Coolants"], "unitPrice": 40.00, "stockLevel": 95, "user": user_instances[0]},
+        {"name": "Zerex Coolant", "categoryID": category_instances["Coolants"], "unitPrice": 45.00, "stockLevel": 85, "user": user_instances[2]},
     ]
     
     product_instances = []
@@ -88,18 +110,18 @@ def populate():
     
     # Create BillDetails and update totalAmount
     bill_details = [
-        {"bill": bill_instances[0], "product": product_instances[0], "quantity": 2, "unitPrice": 50.00},
-        {"bill": bill_instances[1], "product": product_instances[1], "quantity": 1, "unitPrice": 120.00},
-        {"bill": bill_instances[2], "product": product_instances[2], "quantity": 3, "unitPrice": 80.00},
-        {"bill": bill_instances[3], "product": product_instances[3], "quantity": 2, "unitPrice": 60.00},
-        {"bill": bill_instances[4], "product": product_instances[4], "quantity": 1, "unitPrice": 110.00},
-        {"bill": bill_instances[5], "product": product_instances[5], "quantity": 4, "unitPrice": 70.00},
-        {"bill": bill_instances[6], "product": product_instances[6], "quantity": 3, "unitPrice": 25.00},
+        {"billID": bill_instances[0], "productID": product_instances[0], "quantity": 2, "unitPrice": 50.00},
+        {"billID": bill_instances[1], "productID": product_instances[1], "quantity": 1, "unitPrice": 120.00},
+        {"billID": bill_instances[2], "productID": product_instances[2], "quantity": 3, "unitPrice": 80.00},
+        {"billID": bill_instances[3], "productID": product_instances[3], "quantity": 2, "unitPrice": 60.00},
+        {"billID": bill_instances[4], "productID": product_instances[4], "quantity": 1, "unitPrice": 110.00},
+        {"billID": bill_instances[5], "productID": product_instances[5], "quantity": 4, "unitPrice": 70.00},
+        {"billID": bill_instances[6], "productID": product_instances[6], "quantity": 3, "unitPrice": 25.00},
     ]
     
     for detail_data in bill_details:
         bill_detail = BillDetails.objects.create(**detail_data)
-        bill = detail_data["bill"]
+        bill = detail_data["billID"]
         bill.totalAmount += Decimal(bill_detail.quantity) * Decimal(bill_detail.unitPrice)
         bill.save()
         print(f"Created BillDetail: {bill_detail}")
