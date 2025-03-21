@@ -1,10 +1,7 @@
-# Tasks
+## Demo Login Credentials
 
-## Week 1
-1. Database schema - Sakshi
-2. User roles - Vanshika
-3. Basic views and templates - Akash
-
-## Week 2
-1. Implement forms (billing, etc)
-2. Refine templates and views
+ | Role               | Username          | Password       |  
+|--------------------|------------------|---------------|  
+| **Admin**         | `Abhishek`        | `P@ssword123` |  
+| **Cashier**       | `Dolly_Cashier`   | `P@ssword123` |  
+| **Inventory Manager** | `Kat_Inventory`  | `P@ssword123` |  
